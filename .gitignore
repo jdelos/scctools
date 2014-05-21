@@ -1,0 +1,6 @@
+#Ignore ASV files
+*.asv
+#Temporary file from tex editors
+*~
+
+
