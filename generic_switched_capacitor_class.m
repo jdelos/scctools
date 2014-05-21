@@ -1,17 +1,16 @@
 classdef generic_switched_capacitor_class < handle
     %SCC Switched Capacitor Class
-    %  Creates a SCC_class object that provides all the equations for a given 
-	% SCC structure, of a two phase converter
-	%
-	% The creator takes 3 arguments:\
-	%    Ac   -> Capacitor Incidence Matrix
-	%	 Asw1 -> Phase 1 switches incidence matrix
-	%    Asw2 -> Phase 2 switches incidence matrix 
-	%
-	% 
-	%  Philips Research, Eindhoven,  Netherlands
-	%  julia.delos@philps.com
-	%
+    %  Creates a SCC_class object that provides all the equations for a given       % SCC structure, of a multi-phase converter
+    %
+    % The creator takes 3 arguments:\
+    %    Ac   -> Capacitor Incidence Matrix
+    %	 Asw1 -> Phase 1 switches incidence matrix
+    %    Asw2 -> Phase 2 switches incidence matrix 
+    %
+    % 
+    %  Philips Research, Eindhoven,  Netherlands
+    %  julia.delos@philps.com
+    %
     
 	
     properties (SetAccess = private)
