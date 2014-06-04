@@ -123,7 +123,7 @@ classdef generic_switched_capacitor_class < handle
             
             %Initialize Symbolir ducty vector
             if isempty(SC.duty)
-                SC.duty=sym('D',1:(SC.n_phases-1));
+                SC.duty=sym('D',[1 (SC.n_phases-1)]);
             end
             
             %Add last duty cycle
@@ -265,7 +265,7 @@ classdef generic_switched_capacitor_class < handle
                 Ql{j} = fun_cutset(SC.phase{j}.get_on_no_sw(),Tph);
             end            
             %% Compute the charge flow vectors
-            [ al, m] = solve_charge_vectors(Ql,SC.n_caps);
+            [ al, m] = solve_charge_vectors(Ql,SC.n_caps,SC.duty);
             
             %% Update the converter structure 
             for p=1:SC.n_phases

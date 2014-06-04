@@ -1,4 +1,4 @@
-function [ al, m] = solve_charge_vectors(Q,n_caps)
+function [ al, m] = solve_charge_vectors(Q,n_caps,duty)
 % [al, m ] = solve_charge_vectors(Q,n_caps)
 %
 % Function that returns the charge flow vectors from a multiphase SCC. Ql is a cell vector
@@ -39,9 +39,9 @@ n_phase = length(Q);
 %% Create system matrix Qx = [Q_in | Q_c]
 m_size = n_phase*(1+n_caps);
 Qx = zeros(m_size);
-
 n_outs = size(Q{1},2) - (1+n_caps); %Number of output nodes
-if isempty(symvar(Q{1}))
+
+if isempty(symvar(duty(1)))
     Qo = zeros(m_size,n_outs);
 else
     Qo = sym(zeros(m_size,n_outs));
@@ -81,7 +81,7 @@ j_idx = 1;
 m = zeros(1,n_outs);
 for p=1:n_phase
     %Charge matrix per phase
-    al{p} = ax(j_idx +(0:n_caps),:)
+    al{p} = ax(j_idx +(0:n_caps),:);
     
     %Collec input vector
     m = m + ax(j_idx,:);
