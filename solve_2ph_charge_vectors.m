@@ -24,12 +24,12 @@ function [ a1, a2, m] = solve_2ph_charge_vectors(Qf1,Qf2,n_caps,mode,duty)
 cap_cols=2:n_caps+1;
 
 %Charge flow in the capacitors in Steady State qcx_ph1 = -qcx_ph2
-Qf2(:,cap_cols)=-Qf2(:,cap_cols);
+Qf2(:,cap_cols) = -Qf2(:,cap_cols);
 
 %Current flow out of the voltage supply has been defined like a
 %capacitor charges since it is delivering charge singes must be changed
-Qf1(:,1)=-Qf1(:,1); %Ph1
-Qf2(:,1)=-Qf2(:,1); %Ph2
+Qf1(:,1) = -Qf1(:,1); %Ph1
+Qf2(:,1) = -Qf2(:,1); %Ph2
 
 
 %Since during each phase the contribution of the input source is different 

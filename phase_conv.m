@@ -14,11 +14,13 @@ A_aux=[ Asw Aelem ];
 for i=1:m
     Sw_pos = find(A_aux(:,i)==1);
     Sw_neg = find(A_aux(:,i)==-1);
-    if ~isempty(Sw_neg)
-        A_aux(Sw_pos,:)=A_aux(Sw_pos,:)+A_aux(Sw_neg,:);
+    if isempty(Sw_neg)     
+        A_aux(Sw_pos,:)=[];
+    elseif isempty(Sw_pos)
         A_aux(Sw_neg,:)=[];
     else
-        A_aux(Sw_pos,:)=[];
+        A_aux(Sw_pos,:)=A_aux(Sw_pos,:)+A_aux(Sw_neg,:);
+        A_aux(Sw_neg,:)=[];       
     end
 end
 

@@ -19,8 +19,8 @@ if mode
     Tph2 =  build_tree( A_ph2(:,2:end))+1;
 else
     %Buck mode operation ouput loads must be out of the tree generator 
-Tph1 = build_tree( A_ph1(:,1:n_caps+1));
-Tph2 =  build_tree( A_ph2(:,1:n_caps+1));
+    Tph1 =  build_tree( A_ph1(:,1:n_caps+1));
+    Tph2 =  build_tree( A_ph2(:,1:n_caps+1));
 end
 %chec if it is a valid tree
 if ~full_tree(A_ph2(:,Tph2))

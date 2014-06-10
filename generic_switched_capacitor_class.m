@@ -48,8 +48,9 @@ classdef generic_switched_capacitor_class < handle
         phase;       %Phase infromation
         duty;        %Duty cycle vector
         
-        v_caps_norm; %Capacitor voltage normailzet respect input voltage
-        v_sw_norm;   %Switches blocking voltage normailzet respect input voltage
+        v_caps_norm;  %Capacitor voltage normailzet respect input voltage
+        v_sw_norm;    %Switches blocking voltage normailzet respect input voltage
+        v_sw_norm_abs; %Absoulte blocking voltage of the switches
         
         caps;         %symbolic parameters
         esr_caps;
@@ -192,7 +193,7 @@ classdef generic_switched_capacitor_class < handle
                 %Init Switch index
                 sw_idx=1;
                 for i=ph_lst %Switches matrixs
-                    %Get the list of the off switches 
+                    %Get the list of the off switches
                     idx=ph_lst; % Create the list of all the phases
                     idx(i)=[];  % Rmove current phase from the list
                     
@@ -211,9 +212,9 @@ classdef generic_switched_capacitor_class < handle
                     
                     sw_idx= sw_idx + size(varargin{i},2);
                 end
-%% #1 Multiphase [JD 5/21/2014]:This is the original code that was created 
-% to solve only two phase converters, this code will be commented once the 
-% a and b vector solvers are rewritten for mutiphase converters 
+                %% #1 Multiphase [JD 5/21/2014]:This is the original code that was created
+                % to solve only two phase converters, this code will be commented once the
+                % a and b vector solvers are rewritten for mutiphase converters
                 if SC.n_phases == 2
                     SC.a_vec_multiphase(); %Compute a vectors
                     %It computes the conversion ratio
@@ -222,19 +223,17 @@ classdef generic_switched_capacitor_class < handle
                     
                 else
                     SC.a_vec_multiphase();
-                    %Capacitor voltage ratios
-                    %SC.caps_voltage_ratio();
+                    SC.b_vec_multiphase();
+                    SC.gen_k();
                     
-                    %Switches voltage ratios
-                    %SC.switch_voltage_ratio();
                 end
             else
                 error('SCC:argChk','No phase matrixs!');
             end
             
             
-            SC.ar = abs( [SC.phase{1}.ar_vector((SC.n_caps+1):end,:);...
-                SC.phase{2}.ar_vector((SC.n_caps+1):end,:)]);
+            %SC.ar = abs( [SC.phase{1}.ar_vector((SC.n_caps+1):end,:);...
+            %    SC.phase{2}.ar_vector((SC.n_caps+1):end,:)]);
             
             %Normalized voltage at the caps respect input voltage
             SC.caps_voltage_ratio();
@@ -247,11 +246,11 @@ classdef generic_switched_capacitor_class < handle
             SC.dc_out_cap = find(sum([SC.inc_caps(:,dc_caps)...
                 SC.inc_loads],2)==2)-1;
         end
- %% [#1,multiphase,JD,5/21/2014]: Function to compute the a vector for a 
- % multiphase converter
-
-%% Function that solves the charge flow vectors from an SCC.
-% Is the extesion of the function for 2 phase converters
+        %% [#1,multiphase,JD,5/21/2014]: Function to compute the a vector for a
+        % multiphase converter
+        
+        %% function a_vec_multiphase that solves the charge flow vectors from an SCC.
+        % Is the extesion of the function for 2 phase converters
         function a_vec_multiphase(SC)
             Ql = cell(1,SC.n_phases);
             
@@ -259,15 +258,15 @@ classdef generic_switched_capacitor_class < handle
             for j=1:SC.n_phases
                 %Create phase trees
                 Tph = tree_ph_scc(SC.phase{j}.get_on_no_sw(),...
-                      SC.n_caps,...
-                      SC.mode);
-                %Generate cut-set matrices  
+                    SC.n_caps,...
+                    SC.mode);
+                %Generate cut-set matrices
                 Ql{j} = fun_cutset(SC.phase{j}.get_on_no_sw(),Tph);
-            end            
+            end
             %% Compute the charge flow vectors
             [ al, m] = solve_charge_vectors(Ql,SC.n_caps,SC.duty);
             
-            %% Update the converter structure 
+            %% Update the converter structure
             for p=1:SC.n_phases
                 SC.phase{p}.set_a_vector(al{p});
             end
@@ -277,9 +276,12 @@ classdef generic_switched_capacitor_class < handle
             SC.m_boost=1./m;
         end
         
-               
-        function b_vec_2phase(SC)
-            for i=1:2
+        %% Function b_vec_multiphase
+        % Replaced the b_vec_2phase providing a solver for the b vectors for
+        % multiphase converters
+        
+        function b_vec_multiphase(SC)
+            for i=1:SC.n_phases
                 %Short circuit source
                 A_sc = short_edge(SC.phase{i}.get_on_no_sw() ,1);
                 
@@ -311,7 +313,7 @@ classdef generic_switched_capacitor_class < handle
                 %Split matrix with variables and excitations [Sx | So] beta solution is
                 % b = -Sx\So;
                 
-                b=-S(:,1:SC.n_caps)\S(:,SC.n_caps+1:end);
+                b = -S(:,1:SC.n_caps)\S(:,SC.n_caps+1:end);
                 SC.phase{i}.set_b_vector(b);
             end
         end
@@ -392,7 +394,7 @@ classdef generic_switched_capacitor_class < handle
         end
         
         
-        %Compute normalitzed voltage ration at each capacitor
+        %% Compute normalitzed voltage ration at each capacitor
         %Load effects are not taken into account
         function  caps_voltage_ratio(SC)
             B=[];
@@ -402,25 +404,29 @@ classdef generic_switched_capacitor_class < handle
             SC.v_caps_norm=(-B(:,2:end)\B(:,1));
         end
         
-        %Compute nomralitzed blocking voltage at the devices
+        %% Compute nomralitzed blocking voltage at the devices
         %Load effecets are not taken into account
         %For two phase converters
         function switch_voltage_ratio(SC)
             %sw_volt=sym(zeros(1,SC.get_n_switches()));
-            idxs = {SC.phase{2}.sw_idxs, SC.phase{1}.sw_idxs };
-            sw_volt = zeros(1,SC.n_switches);
+            
+            sw_volt = zeros(SC.n_phases,SC.n_switches);
             for i=1:SC.n_phases
+                idxs = 1:SC.n_switches;
+                for x = SC.phase{i}.sw_idxs
+                    idxs(x ==idxs) = [];
+                end
                 B = inM2loopM(SC.phase{i}.get_on_no_load());
                 %Preserve only the loops where the switches are links
                 B = B((end-SC.phase{i}.n_off_sw)+1:end,:);
                 
-                
-                %% Bloking voltage of the other phase switches
-                sw_volt( idxs{i} ) = ...
-                    -(B(:,(SC.n_caps+2):end)\B(:,1:(SC.n_caps+1))*[1; SC.v_caps_norm]);
-                
+                %% Bloking voltage of the other phase switches            
+                sw_volt(i,idxs) = ...
+                    -(B(:,(SC.n_caps+2):end)\B(:,1:(SC.n_caps+1))*...
+                    [1; SC.v_caps_norm]); %Solve the blocking voltages
             end
-            SC.v_sw_norm = sw_volt;
+            SC.v_sw_norm     = sw_volt;
+            SC.v_sw_norm_abs = max(abs(sw_volt),[],1);
         end
         
     end
