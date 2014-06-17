@@ -215,17 +215,10 @@ classdef generic_switched_capacitor_class < handle
                 %% #1 Multiphase [JD 5/21/2014]:This is the original code that was created
                 % to solve only two phase converters, this code will be commented once the
                 % a and b vector solvers are rewritten for mutiphase converters
-                if SC.n_phases == 2
-                    SC.a_vec_multiphase(); %Compute a vectors
-                    %It computes the conversion ratio
-                    SC.b_vec_2phase(); %Compute b vectors
-                    SC.gen_k(); %Generate k_matrix
-                    
-                else
+                if SC.n_phases > 1
                     SC.a_vec_multiphase();
                     SC.b_vec_multiphase();
                     SC.gen_k();
-                    
                 end
             else
                 error('SCC:argChk','No phase matrixs!');
