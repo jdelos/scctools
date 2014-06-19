@@ -67,7 +67,7 @@ end
 
 %Generate output structures
 topology.ratio = Dickson.m_ratios(OutNodes);
-topology.ar = Dickson.ar(:,OutNodes);
+%topology.ar = Dickson.ar(:,OutNodes);
 %topology.ac = Dickson.ac(:,OutNodes);
 topology.vc = Dickson.v_caps_norm.'; %Capacitor voltages voltages
 topology.vr = Dickson.v_sw_norm; %Switches voltages
@@ -112,6 +112,7 @@ topology.N_outs = length(topology.ratio);
 topology.N_sw     = size(A_sw1,2)+size(A_sw2,2);
 topology.N_caps   = size(A_caps,2);
 
+topology.ph = Dickson.phase;
 end
 
 

@@ -25,7 +25,7 @@ function [rx, FoM ] = dickson_optimizer_fsl (topology,mode, opt)
 %
     
 if isfield(opt,'rxua')
-    rxua = opt.rxua;
+    rxua = opt.rxua/ opt.rxua(1); %Normalize rxua respect the first element
 else
     rxua = ones(1,length(symvar(topology.f_fsl)));
 end
@@ -68,4 +68,7 @@ B = zeros([N 1]);
 lb(1:N,1)=0.005;
 ub = ones(1,N);
 
-[rx, FoM, ] = fmincon(@(x)FoM(x), x0, A, B,Aeq,Beq,lb,ub,[],options); 
+[rx, FoM ] = fmincon(@(x)FoM(x), x0, A, B,Aeq,Beq,lb,ub,[],options);
+if isfield(opt,'rxua')
+    FoM = FoM*opt.rxua(1); % Bring normalitzation back
+end

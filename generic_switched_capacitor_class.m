@@ -403,7 +403,7 @@ classdef generic_switched_capacitor_class < handle
         function switch_voltage_ratio(SC)
             %sw_volt=sym(zeros(1,SC.get_n_switches()));
             
-            sw_volt = zeros(SC.n_phases,SC.n_switches);
+            sw_volt = zeros(1,SC.n_switches);
             for i=1:SC.n_phases
                 idxs = 1:SC.n_switches;
                 for x = SC.phase{i}.sw_idxs
@@ -414,7 +414,7 @@ classdef generic_switched_capacitor_class < handle
                 B = B((end-SC.phase{i}.n_off_sw)+1:end,:);
                 
                 %% Bloking voltage of the other phase switches            
-                sw_volt(i,idxs) = ...
+                sw_volt(1,idxs) = ...
                     -(B(:,(SC.n_caps+2):end)\B(:,1:(SC.n_caps+1))*...
                     [1; SC.v_caps_norm]); %Solve the blocking voltages
             end
