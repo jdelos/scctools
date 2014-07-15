@@ -26,15 +26,20 @@ function [cx, FoM ] = dickson_optimizer_ssl (topology,mode,cond)
     
 options = optimset('fmincon');
 options = optimset(options, 'TolFun', 1e-11, 'MaxIter', 400000, ...
-    'Display', 'off', 'LargeScale', 'on','Algorithm','active-set');
+    'Display', 'on', 'LargeScale', 'on','Algorithm','active-set');
 
+%% Get number of capacitors
 N = length(symvar(topology.f_ssl));
+
+%% Get number of outputs
+N_outs = length(topology.f_ssl);
+
+%% Standard Optmitzation paramteters
 flg = -10;
 lb_t=0.01;
 itr=0;
 fcond = [];
 
-%% Standard Optmitzation paramteters
 x0(1:N)=1/N;
 Aeq = ones(1,N);
 Beq = 1;
@@ -44,7 +49,7 @@ B = zeros([N 1]);
 ub = ones(1,N);
 lb(1,1:N)=lb_t;
 
-if (min(mode) > 0) && (max(mode) <= N )
+if (min(mode) > 0) && (max(mode) <= N_outs )
     if isscalar(mode)
         FoM = @(x)subs(topology.f_ssl(mode),...
             symvar(topology.f_ssl),x);
