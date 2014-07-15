@@ -36,8 +36,10 @@ options = optimset(options, 'TolFun', 1e-11, 'MaxIter', 400000, ...
 
 N = length(symvar(topology.f_fsl));
 
+%% Get number of outputs
+N_outs = length(topology.f_fsl)
 
-if (min(mode) > 0) && (max(mode) <= N )
+if (min(mode) > 0) && (max(mode) <= N_outs )
     if isscalar(mode)
         FoM = @(x)subs(topology.f_fsl(mode),...
             symvar(topology.f_fsl),rxua./x);
