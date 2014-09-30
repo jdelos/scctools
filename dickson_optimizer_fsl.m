@@ -1,4 +1,4 @@
-function [rx, FoM ] = dickson_optimizer_fsl (topology,mode, opt)
+function [rx, FoM ] = dickson_optimizer_fsl (topology,opt)
 % dickson_optimizer_ssl(topology,mode,Io): Finds the optimal capacitor relative sizing fora a dkison
 % topology. The otpimtzation is done for a converter operatin in the FSL
 %   
@@ -24,25 +24,41 @@ function [rx, FoM ] = dickson_optimizer_fsl (topology,mode, opt)
 %  julia.delos@philps.com
 %
     
+%% Get mode value
+if isfield(opt,'mode')
+    mode = opt.mode;
+else
+    mode = -1;
+end
+
+%% Weighted switch areas 
 if isfield(opt,'rxua')
     rxua = opt.rxua/ opt.rxua(1); %Normalize rxua respect the first element
 else
     rxua = ones(1,length(symvar(topology.f_fsl)));
 end
 
+%% Log display
+if isfield(opt,'log')
+    log = opt.log;
+else
+    log = 'off';
+end
+
+%%  
 options = optimset('fmincon');
 options = optimset(options, 'TolFun', 1e-11, 'MaxIter', 400000, ...
-    'Display', 'on', 'LargeScale', 'off','MaxFunEvals',1400);
+    'Display', log, 'LargeScale', 'off','MaxFunEvals',1400);
 
 N = length(symvar(topology.f_fsl));
 
 %% Get number of outputs
-N_outs = length(topology.f_fsl)
+N_outs = length(topology.f_fsl);
 
 if (min(mode) > 0) && (max(mode) <= N_outs )
     if isscalar(mode)
-        FoM = @(x)subs(topology.f_fsl(mode),...
-            symvar(topology.f_fsl),rxua./x);
+        FoM = @(x)double(subs(topology.f_fsl(mode),...
+            symvar(topology.f_fsl),rxua./x));
     else
         mode = unique(mode);
         FoM = @(x)subs(sum(topology.f_fsl(mode)),...

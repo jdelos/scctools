@@ -1,4 +1,4 @@
-function [cx, FoM ] = dickson_optimizer_ssl (topology,mode,cond)
+function [cx, FoM ] = dickson_optimizer_ssl (topology,opt)
 % dickson_optimizer_ssl(topology,mode,Io): Finds the optimal capacitor relative sizing fora a dkison
 % topology. The otpimtzation is done for a converter operatin in the ssl
 %   
@@ -24,12 +24,54 @@ function [cx, FoM ] = dickson_optimizer_ssl (topology,mode,cond)
 %  julia.delos@philps.com
 %
     
+
+
+%% Get mode value
+if isfield(opt,'mode')
+    mode = opt.mode;
+else
+    mode = -1;
+end
+
+%% Get ripple output condition [NOT WORKING]
+if isfield(opt,'cond')
+    cond = opt.cond;
+end
+
+%% Average duty cycle center of the optimitzation
+if isfield(opt,'duty')
+    duty = opt.duty;
+else
+    duty = -1;
+end
+
+if isfield(opt,'dst_points')
+    dst_points = opt.dst_points;
+else
+    dst_points = 30;
+end
+
+if isfield(opt,'distr')
+    distr = opt.distr;
+else
+    distr = 'normal';
+end
+
+if isfield(opt,'log')
+    log = opt.log;
+else
+    log = 'off';
+end
+
+
+%% Configure optimizer
 options = optimset('fmincon');
 options = optimset(options, 'TolFun', 1e-11, 'MaxIter', 400000, ...
-    'Display', 'on', 'LargeScale', 'on','Algorithm','active-set');
+    'Display', log, 'LargeScale', 'on','Algorithm','active-set');
+
 
 %% Get number of capacitors
-N = length(symvar(topology.f_ssl));
+N = topology.N_caps;
 
 %% Get number of outputs
 N_outs = length(topology.f_ssl);
@@ -49,10 +91,40 @@ B = zeros([N 1]);
 ub = ones(1,N);
 lb(1,1:N)=lb_t;
 
+%% Check if duty cycle is specified
+avgFoM = 0; 
+if duty > 0 
+    smplX = linspace(0.1,0.9,dst_points);
+    x     =  -1:0.001:1;
+    sig   = 1/sqrt(2*pi);
+    switch (distr)
+        case 'normal'
+            norm  = normpdf(x,0,sig);
+            weigD = interp1(x+duty,norm,smplX);
+        case 'flat'
+            weigD = smplX*0+1;           
+        case 'cos'
+            norm  = cos(pi*x);
+            weigD = interp1(x+duty,norm,smplX);
+    end
+    
+    avgFoM = 1;
+end
+
 if (min(mode) > 0) && (max(mode) <= N_outs )
     if isscalar(mode)
-        FoM = @(x)subs(topology.f_ssl(mode),...
-            symvar(topology.f_ssl),x);
+        if ~avgFoM 
+            FoM = @(x)subs(topology.f_ssl(mode),...
+                symvar(topology.f_ssl),x);
+        else
+           FoM = sym(0);
+           for j = 1:dst_points 
+               FoM = FoM + subs(topology.f_ssl(mode),...
+                symvar(topology.f_ssl),[sym('x',[1 topology.N_caps]) smplX(j)])*weigD(j);
+           end
+           FoM = @(x)subs(FoM,symvar(FoM),x)/dst_points;
+        end
+            
     else
         mode = unique(mode);
         FoM = @(x)subs(sum(topology.f_ssl(mode)),...
@@ -81,9 +153,7 @@ else
     end
 end
 
-%% Omptimitze iterations
-while(flg < 0 && itr <= 5 )
-
+%% Launch optimitzation
 if isempty(fcond)
     [cx, FoM, flg] = fmincon(@(x)FoM(x), x0, A, B,Aeq,Beq,lb,ub,...
     [],options); 
@@ -105,17 +175,6 @@ else
     [cx, FoM, flg] = fmincon(@(x)FoM(x), x0, A, B,Aeq,Beq,lb,ub,...
     @(x)fcond(x),options); 
 
-end
-itr = itr +1 ;
-disp(flg)
-if any(lb == cx) 
- flg = -1;
- idxs = (lb == cx);
- lb(idxs)=lb(idxs)*.1; %% Update lower boundareis
-
- disp(['Low bounderi reached changed to:' num2str(lb) ])
-end
-break
 end
 
 function [c , ceq] = rippCond(cx,topology,cond)
