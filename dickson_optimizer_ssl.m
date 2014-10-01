@@ -1,4 +1,4 @@
-function [cx, FoM ] = dickson_optimizer_ssl (topology,opt)
+function [cx, minFoM ] = dickson_optimizer_ssl (topology,opt)
 % dickson_optimizer_ssl(topology,mode,Io): Finds the optimal capacitor relative sizing fora a dkison
 % topology. The otpimtzation is done for a converter operatin in the ssl
 %   
@@ -45,18 +45,29 @@ else
     duty = -1;
 end
 
+%% Number of points used in the averaged optimitzation 
 if isfield(opt,'dst_points')
     dst_points = opt.dst_points;
 else
     dst_points = 30;
 end
 
+%% Distribution function
 if isfield(opt,'distr')
     distr = opt.distr;
 else
     distr = 'normal';
 end
 
+%% Averaged limits
+if isfield(opt,'bounds')
+    bounds = opt.bounds;
+else
+    bounds = [0.1 0.9];
+end
+
+
+%% Optimitzation display 
 if isfield(opt,'log')
     log = opt.log;
 else
@@ -91,10 +102,10 @@ B = zeros([N 1]);
 ub = ones(1,N);
 lb(1,1:N)=lb_t;
 
-%% Check if duty cycle is specified
+%% Generate Weighting Function
 avgFoM = 0; 
 if duty > 0 
-    smplX = linspace(0.1,0.9,dst_points);
+    smplX = linspace(bounds(1),bounds(2),dst_points);
     x     =  -1:0.001:1;
     sig   = 1/sqrt(2*pi);
     switch (distr)
@@ -113,18 +124,17 @@ end
 
 if (min(mode) > 0) && (max(mode) <= N_outs )
     if isscalar(mode)
-        if ~avgFoM 
+        if ~avgFoM %Single point optimitzation
             FoM = @(x)subs(topology.f_ssl(mode),...
                 symvar(topology.f_ssl),x);
-        else
+        else %Averaged optimitzation
            FoM = sym(0);
            for j = 1:dst_points 
                FoM = FoM + subs(topology.f_ssl(mode),...
                 symvar(topology.f_ssl),[sym('x',[1 topology.N_caps]) smplX(j)])*weigD(j);
            end
            FoM = @(x)subs(FoM,symvar(FoM),x)/dst_points;
-        end
-            
+        end     
     else
         mode = unique(mode);
         FoM = @(x)subs(sum(topology.f_ssl(mode)),...
@@ -155,26 +165,8 @@ end
 
 %% Launch optimitzation
 if isempty(fcond)
-    [cx, FoM, flg] = fmincon(@(x)FoM(x), x0, A, B,Aeq,Beq,lb,ub,...
+    [cx, minFoM, flg] = fmincon(@(x)FoM(x), x0, A, B,Aeq,Beq,lb,ub,...
     [],options); 
-
-else
-    %% DC Node optimitzation
-    Ct_o = 10e-9;
-    Ct_up = 5e-3;
-    Ct_lb = 1e-9;
-    
-    x0 = [Ct_o ones(1,N)*1/N];
-    %lb=[ lb*ones(1:N,1)];
-    Aeq =[ 0 ones(1,N)];
-    Beq = 1;
-    A = -eye(N+1);
-    B = zeros([N+1 1]);
-    ub = [Ct_up ones(1,N)];
-    lb = [Ct_lb ones(1,N)*lb_t];
-    [cx, FoM, flg] = fmincon(@(x)FoM(x), x0, A, B,Aeq,Beq,lb,ub,...
-    @(x)fcond(x),options); 
-
 end
 
 function [c , ceq] = rippCond(cx,topology,cond)
