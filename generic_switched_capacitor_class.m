@@ -29,13 +29,17 @@ classdef generic_switched_capacitor_class < handle
         
         incidence_matrix; %Complete Converter incidence matrix
         inc_caps;    %Incidence matrix of capacitors
+        inc_switches; %Incidence matrix switches
         inc_loads;   %Incidence matrix of loads
+        
+        SW_active    %Matrix with the active switches
+        inc_sw_act   %Phase activation matrix
         
         m_ratios;    %Conversion Ratio vector
         m_boost;
         
         k_ssl;       %K ssl factor matrix
-        k_ssl_a;       %K ssl factor matrix
+        k_ssl_a;     %K ssl factor matrix
         k_fsl;       %K fsl factors
         k_factors;   %square summ of the k_ssl and k_fsl
         r_buck;      %Buck equivalent resitance
@@ -54,7 +58,10 @@ classdef generic_switched_capacitor_class < handle
         
         v_caps_norm;  %Capacitor voltage normailzet respect input voltage
         v_sw_norm;    %Switches blocking voltage normailzet respect input voltage
-        v_sw_norm_abs; %Absoulte blocking voltage of the switches
+        v_sw_abs;     %Absoulte blocking voltage of the switches
+        v_sw_frw;
+        v_sw_rev;
+        
         
         caps;         %symbolic parameters
         esr_caps;
@@ -71,16 +78,40 @@ classdef generic_switched_capacitor_class < handle
     end
     
     methods
-        function SC = generic_switched_capacitor_class(inc_caps,varargin)
+        
+        function SC = generic_switched_capacitor_class(ArchDesc,varargin)
             
+            %% Get Capacitor incidence matrix
+            if isfield(ArchDesc,'Acaps')
+                SC.inc_caps = ArchDesc.Acaps;
+            else
+                error('gen_scc:argChk','Missing Acaps field in the ArchDesc structure!')
+            end
             
-            %Number of loads
-            SC.n_nodes = size(inc_caps,1);
-            SC.n_outs = SC.n_nodes; %One node is the input
-            SC.n_caps = size(inc_caps,2);
+            %% Get Switch incidence matrix
+            if isfield(ArchDesc,'Asw')
+                SC.inc_switches = ArchDesc.Asw;
+            else
+                error('gen_scc:argChk','Missing Asw field in the ArchDesc structure!')
+            end
             
+            %% Get Switch incidence matrix
+            if isfield(ArchDesc,'Asw_act')
+                SC.SW_active = ArchDesc.Asw_act;
+            else
+                error('gen_scc:argChk','Missing Asw field in the ArchDesc structure!')
+            end
             
-            %Parse input arguments
+            %% Get number of phases
+            SC.n_phases=size(SC.SW_active,1);
+            
+            %% Number of loads
+            SC.n_nodes    = size(SC.inc_caps,1);
+            SC.n_outs     = SC.n_nodes; %One node is the input
+            SC.n_caps     = size(SC.inc_caps,2);
+            SC.n_switches = size(SC.inc_switches,2);
+            
+            %% Parse input arguments
             i=1;
             while i<=(nargin-1)
                 if ischar(varargin{i})
@@ -103,19 +134,19 @@ classdef generic_switched_capacitor_class < handle
                             error('SCC:argChk','Unknown Parameter');
                             
                     end
-                    
-                else
-                    SC.n_phases=1+SC.n_phases;
-                    
-                    SC.n_switches = SC.n_switches + ...
-                        size(varargin{i},2);
-                    i=i+1;
                 end
             end
             
+            %% Generate activation matrices
+            inc_sw_act = cell(1,SC.n_phases);
+            for j = 1:SC.n_phases
+                inc_sw_act{j} = SC.inc_switches(:,logical(SC.SW_active(j,:)));
+            end
+            
+            
             %Create converter Incidence Matrix
-            SC.incidence_matrix=[inc_caps ...
-                varargin{1:SC.n_phases}];
+            SC.incidence_matrix=[SC.inc_caps ...
+                inc_sw_act{1:SC.n_phases}];
             
             
             %Switchinf frequency normalitzed respect 1
@@ -152,27 +183,26 @@ classdef generic_switched_capacitor_class < handle
             end
             
             %Initialize Capacitor incidence matrix
-            %SC.input_cap = parallel_elem(SC.supply_branch,inc_caps); %Identify the input capacitor
+            %SC.input_cap = parallel_elem(SC.supply_branch,SC.inc_caps); %Identify the input capacitor
             
             %if the input source is not connected through an inductor remove
             %capacitor in parallel to the voltage supply
             if ~SC.mode
                 %Buck mode
                 %Input capacitor is parallel to the supply
-                [~,~,ic]=unique([SC.supply_branch inc_caps]','rows','stable');
+                [~,~,ic]=unique([SC.supply_branch SC.inc_caps]','rows','stable');
                 %Parallele capacitor branch
                 SC.input_cap=find(ic(2:end)==1,1,'last');
                 %Eliminate the capacitor branch
-                inc_caps(:,SC.input_cap)=[];
-                SC.inc_caps = inc_caps;
-                SC.n_caps = size(inc_caps,2);
+                SC.inc_caps(:,SC.input_cap)=[];
+                SC.n_caps = size(SC.inc_caps,2);
                 
                 %Remove the ESR and the Flying caps
                 SC.esr_caps(SC.input_cap)=[];
                 SC.caps(SC.input_cap)=[];
                 SC.n_inputs=1;
                 
-                SC.n_nodes = size(inc_caps,1);
+                SC.n_nodes = size(SC.inc_caps,1);
                 SC.n_outs = SC.n_nodes-1; %One node is the input
                 
             else
@@ -182,8 +212,7 @@ classdef generic_switched_capacitor_class < handle
                 %be deleted from the incidence matrix
                 %Loads ar considered to be connected to ground
                 
-                SC.inc_caps = inc_caps;
-                SC.n_caps = size(inc_caps,2);
+                SC.n_caps = size(SC.inc_caps,2);
                 
             end
             
@@ -194,27 +223,22 @@ classdef generic_switched_capacitor_class < handle
                 %SC.n_phases= length(varargin); %Number of phases
                 ph_lst = 1:SC.n_phases;
                 
-                %Init Switch index
-                sw_idx=1;
+                
                 for i=ph_lst %Switches matrixs
-                    %Get the list of the off switches
-                    idx=ph_lst; % Create the list of all the phases
-                    idx(i)=[];  % Rmove current phase from the list
-                    
-                    
+                       
                     %Current mode control function
                     gload =@(x)(SC.duty(i)*(1-x) + x);
                     gsrc  =@(x)(SC.duty(i)*x + (1-x));
                     
                     %Initialize phase
-                    SC.phase{i}=SCC_Phase(varargin{i},...
-                        inc_caps,horzcat(varargin{idx}),...
+                    SC.phase{i}=SCC_Phase(inc_sw_act{i},...
+                        SC.inc_caps,...
+                        SC.inc_switches(:,~logical(SC.SW_active(i,:))),...
                         SC.inc_loads*gload(SC.mode),...
                         SC.n_caps,...
-                        sw_idx,...
+                        find(SC.SW_active(i,:)),...
                         SC.supply_branch*gsrc(SC.mode));
                     
-                    sw_idx= sw_idx + size(varargin{i},2);
                 end
                 %% #1 Multiphase [JD 5/21/2014]:This is the original code that was created
                 % to solve only two phase converters, this code will be commented once the
@@ -340,7 +364,7 @@ classdef generic_switched_capacitor_class < handle
             
         end
         
-         function k_ssl_a = gen_k_ssl_a(SC)
+        function k_ssl_a = gen_k_ssl_a(SC)
             
             %Compute the square terms of the rows and add them for each
             %phase
@@ -365,17 +389,14 @@ classdef generic_switched_capacitor_class < handle
             %The resulting matrix is presented in the model format matrix
             k_fsl=zeros(SC.n_outs); %#ok<*PROP>
             
-            %Offset index switches
-            sw_offset=1;
-            
+                       
             for i=1:SC.n_phases
                 if isempty(SC.ron_switches)
                     sw_vector = [SC.esr_caps...
                         sym(['R' num2str(i) '_s'], [1 SC.phase{i}.n_on_sw])];
                 else
                     sw_vector = [SC.esr_caps...
-                        SC.ron_switches(sw_offset:(SC.phase{i}.n_on_sw+(sw_offset-1)))];
-                    sw_offset = sw_offset + SC.phase{i}.n_on_sw;
+                        SC.ron_switches(logical(SC.SW_active(i,:)))];
                 end
                 
                 k_fsl =1./(SC.duty(i)).*...
@@ -424,9 +445,9 @@ classdef generic_switched_capacitor_class < handle
         %For two phase converters
         function switch_voltage_ratio(SC)
             %sw_volt=sym(zeros(1,SC.get_n_switches()));
-            
-            sw_volt = zeros(1,SC.n_switches);
+            sw_volt = zeros(SC.n_phases,SC.n_switches);
             for i=1:SC.n_phases
+                
                 idxs = 1:SC.n_switches;
                 for x = SC.phase{i}.sw_idxs
                     idxs(x ==idxs) = [];
@@ -435,13 +456,20 @@ classdef generic_switched_capacitor_class < handle
                 %Preserve only the loops where the switches are links
                 B = B((end-SC.phase{i}.n_off_sw)+1:end,:);
                 
-                %% Bloking voltage of the other phase switches            
-                sw_volt(1,idxs) = ...
+                %% Bloking voltage of the other phase switches
+                sw_volt(i,idxs) = ...
                     -(B(:,(SC.n_caps+2):end)\B(:,1:(SC.n_caps+1))*...
                     [1; SC.v_caps_norm]); %Solve the blocking voltages
+                %sw_volt_max = max(sw_volt,sw_volt_max);
+                %sw_volt_min = min(sw_volt,sw_volt_min);
             end
-            SC.v_sw_norm     = sw_volt;
-            SC.v_sw_norm_abs = max(abs(sw_volt),[],1);
+            SC.v_sw_frw = max(sw_volt,[],1);
+            SC.v_sw_rev = min(sw_volt,[],1);
+            [SC.v_sw_abs, I] = max(abs(sw_volt),[],1);
+            SC.v_sw_norm = zeros(1,SC.n_switches);
+            for j=1:length(I)
+                SC.v_sw_norm(j,I(j))= sw_volt(I(j),j);
+            end 
         end
         
     end
