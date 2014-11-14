@@ -66,6 +66,13 @@ else
     bounds = [0.1 0.9];
 end
 
+%% Averaged optimitzation
+if isfield(opt,'averaged')
+    avgFoM = opt.averaged;
+else
+    avgFoM = false; 
+end
+
 
 %% Optimitzation display 
 if isfield(opt,'log')
@@ -103,8 +110,8 @@ ub = ones(1,N);
 lb(1,1:N)=lb_t;
 
 %% Generate Weighting Function
-avgFoM = 0; 
-if duty > 0 
+
+if  avgFoM  
     smplX = linspace(bounds(1),bounds(2),dst_points);
     x     =  -1:0.001:1;
     sig   = 1/sqrt(2*pi);
@@ -118,8 +125,6 @@ if duty > 0
             norm  = cos(pi*x);
             weigD = interp1(x+duty,norm,smplX);
     end
-    
-    avgFoM = 1;
 end
 
 if (min(mode) > 0) && (max(mode) <= N_outs )
@@ -137,8 +142,17 @@ if (min(mode) > 0) && (max(mode) <= N_outs )
         end     
     else
         mode = unique(mode);
-        FoM = @(x)subs(sum(topology.f_ssl(mode)),...
-            symvar(topology.f_ssl),x);
+        if ~avgFoM %Single point optimitzation
+            FoM = @(x)subs(sum(topology.f_ssl(mode)),...
+                symvar(topology.f_ssl),x);
+        else
+           FoM = sym(0);
+           for j = 1:dst_points 
+               FoM = FoM + subs(sum(topology.f_ssl(mode)),...
+                symvar(topology.f_ssl),[sym('x',[1 topology.N_caps]) smplX(j)])*weigD(j);
+           end
+           FoM = @(x)subs(FoM,symvar(FoM),x)/dst_points; 
+        end
     end
 else
     switch mode

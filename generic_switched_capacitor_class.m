@@ -35,6 +35,7 @@ classdef generic_switched_capacitor_class < handle
         m_boost;
         
         k_ssl;       %K ssl factor matrix
+        k_ssl_a;       %K ssl factor matrix
         k_fsl;       %K fsl factors
         k_factors;   %square summ of the k_ssl and k_fsl
         r_buck;      %Buck equivalent resitance
@@ -44,6 +45,9 @@ classdef generic_switched_capacitor_class < handle
         r_ssl;
         r_fsl;
         beta;
+        
+        beta_a;
+        
         
         phase;       %Phase infromation
         duty;        %Duty cycle vector
@@ -336,6 +340,24 @@ classdef generic_switched_capacitor_class < handle
             
         end
         
+         function k_ssl_a = gen_k_ssl_a(SC)
+            
+            %Compute the square terms of the rows and add them for each
+            %phase
+            %The resulting matrix is presented in the model format matrix
+            r_tot = matrix_2_expon(SC.phase{1}.get_ac_vector()) ;
+            for i=2:SC.n_phases;
+                r_tot = matrix_2_expon(SC.phase{i}.get_ac_vector()) + r_tot;
+            end
+            
+            %Weight the factors with the Caps values and add them
+            SC.beta_a= D3_matrix_addition(r_tot,1./SC.caps);
+            SC.k_ssl_a = 1/(2*SC.fsw_op)*SC.beta_a;
+            SC.beta_a= diag(D3_matrix_addition(r_tot,1./SC.caps));
+            k_ssl_a = SC.k_ssl_a;
+            
+        end
+        
         
         function gen_k_fsl(SC)
             %Compute the square terms of the rows and add them for each
@@ -352,8 +374,8 @@ classdef generic_switched_capacitor_class < handle
                         sym(['R' num2str(i) '_s'], [1 SC.phase{i}.n_on_sw])];
                 else
                     sw_vector = [SC.esr_caps...
-                        SC.ron_switches(sw_offset:SC.phase{i}.n_on_sw+(sw_offset-1))];
-                    sw_offset = SC.phase{i}.n_on_sw+1;
+                        SC.ron_switches(sw_offset:(SC.phase{i}.n_on_sw+(sw_offset-1)))];
+                    sw_offset = sw_offset + SC.phase{i}.n_on_sw;
                 end
                 
                 k_fsl =1./(SC.duty(i)).*...
