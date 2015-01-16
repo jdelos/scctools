@@ -1,8 +1,13 @@
 function [ topology ] = dickson_hybrid_topology(n_caps,duty,opt)
-%% dickson_matrix_hybrid: Create topology of a floating hybrid cell
+%%  topology = dickson_matrix_hybrid(n_caps,duty,opt) 
+%Create topology of a floating hybrid cell
+%   Input arguments:
+%       n_caps --> # of capacitors
+%       duty   --> dutcy cycle
+%       opt    --> options strucutre
+%       opt.dc_out  --> 1 keeps dc outputs in the results 
+%       opt.half_point --> 1 adds half point structure in the tolology
 %
-%   dickson_matrix_hybrid( n_caps,duty,opt)
-%       n_stages: number of capacitors
 %
 %   Returns: topology structure with all the relevant functions to model
 %   the behaviour of a Hyrbrid Switched Capacitro and compute the losses
@@ -39,9 +44,7 @@ if half_point
    A_sw2(1,:)  = []; 
    
    %Remove top swithc is the first swhitch of phase1
-   A_sw1(:,1)  = [];  
-   
-    
+   A_sw1(:,1)  = [];   
 
    A_caps = append_mA(A_cap_hp,A_caps);
    A_sw1  = append_mA(A_sw1_hp,A_sw1);
