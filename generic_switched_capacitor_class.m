@@ -2,20 +2,18 @@ classdef generic_switched_capacitor_class < handle
     %% SCC Switched Capacitor Class
     %  Creates a SCC_class object that provides all the equations for a given       % SCC structure, of a multi-phase converter
     %
-    % The creator takes the arguments:
-    %    Ac   -> Capacitor Incidence Matrix
-    %	 Asw1 -> Phase 1 switches incidence matrix
-    %    Asw2 -> Phase 2 switches incidence matrix
-    %    Asw3 -> Phase 3 switches incidence matrix
-    %    ....
-    %    AswN -> Phase N switch incidence matrix
-    %    options -> Vecgtor with the relative duty cycle of each phase
-    %            [D1 D2 D3 ... Dn-1 ]
+    % The creator takes the following arguments:
+    %    ArchDef --> Architecture description file, with the fields: 
+    %       Acaps   --> Capacitor incidence matrix
+	%       Asw     --> Switch incidence matrix
+	%       Asw_atc --> Switch activation matrix
     %  Philips Research, Eindhoven,  Netherlands
     %  julia.delos@philps.com
+	% 
+	%  iss2: update -> 14 Nov 2014 
     %
     
-    %% Propoerties
+    %% Properties
     properties (SetAccess = private)
         n_caps;      %Number of capacitors
         dc_out_cap;
@@ -80,7 +78,7 @@ classdef generic_switched_capacitor_class < handle
     methods
         
         function SC = generic_switched_capacitor_class(ArchDesc,varargin)
-            
+          %% iss2: input arguments method toallyu changed %%  
             %% Get Capacitor incidence matrix
             if isfield(ArchDesc,'Acaps')
                 SC.inc_caps = ArchDesc.Acaps;
@@ -100,6 +98,15 @@ classdef generic_switched_capacitor_class < handle
                 SC.SW_active = ArchDesc.Asw_act;
             else
                 error('gen_scc:argChk','Missing Asw field in the ArchDesc structure!')
+            end
+            
+            %% Check matrices size consitancy
+            if (size(SC.inc_switches,1)~=size(SC.inc_caps,1)) 
+                error('gen_scc:argChk','Different number of nodes between incidence matrices!')
+            end 
+            
+            if (size(SC.inc_switches,2)~=size(SC.SW_active,2))
+                 error('gen_scc:argChk','Not consitency between Switch Activation and Incidence matrices!')
             end
             
             %% Get number of phases
@@ -263,7 +270,7 @@ classdef generic_switched_capacitor_class < handle
             SC.switch_voltage_ratio();
             
             %Get dc caps
-            dc_caps = find(sum(SC.inc_caps,1));
+            dc_caps = logical(sum(SC.inc_caps,1));   %iss2: Changed find by logical boost speed
             SC.dc_out_cap = find(sum([SC.inc_caps(:,dc_caps)...
                 SC.inc_loads],2)==2)-1;
         end
