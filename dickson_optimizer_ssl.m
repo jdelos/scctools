@@ -56,7 +56,7 @@ end
 if isfield(opt,'distr')
     distr = opt.distr;
 else
-    distr = 'normal';
+    distr = 'flat';
 end
 
 %% Averaged limits
@@ -138,7 +138,7 @@ if (min(mode) > 0) && (max(mode) <= N_outs )
                FoM = FoM + subs(topology.f_ssl(mode),...
                 symvar(topology.f_ssl),[sym('x',[1 topology.N_caps]) smplX(j)])*weigD(j);
            end
-           FoM = @(x)subs(FoM,symvar(FoM),x)/dst_points;
+           FoM = @(x)eval(subs(FoM,symvar(FoM),x)/dst_points);
         end     
     else
         mode = unique(mode);
@@ -151,7 +151,7 @@ if (min(mode) > 0) && (max(mode) <= N_outs )
                FoM = FoM + subs(sum(topology.f_ssl(mode)),...
                 symvar(topology.f_ssl),[sym('x',[1 topology.N_caps]) smplX(j)])*weigD(j);
            end
-           FoM = @(x)subs(FoM,symvar(FoM),x)/dst_points; 
+           FoM = @(x)eval(subs(FoM,symvar(FoM),x)/dst_points); 
         end
     end
 else

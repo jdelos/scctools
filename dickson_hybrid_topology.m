@@ -17,13 +17,15 @@ function [ topology ] = dickson_hybrid_topology(n_caps,duty,opt)
 
 dc_out = opt.dc_out;
 half_point = opt.half_point;
+half_point = 0;
 
 if (nargin == 1) || isempty(duty) 
     duty = 0.5;
 end
 
 %% Generate the incidence matrixs
-[A_caps, A_sw1, A_sw2] = dickson_matrix(n_caps,0);
+%[A_caps, A_sw1, A_sw2] = dickson_matrix(n_caps,0);
+ ArchDef  = dickson_arch(n_caps);
 
 %% Add half point conversion
 if half_point 
@@ -41,22 +43,19 @@ if half_point
    %Remove top swithc is the first swhitch of phase1
    A_sw1(:,1)  = [];  
    
-    
-
    A_caps = append_mA(A_cap_hp,A_caps);
    A_sw1  = append_mA(A_sw1_hp,A_sw1);
    A_sw2  = append_mA(A_sw2_hp,A_sw2);
 end
 
 %% Create class 
-Dickson =  generic_switched_capacitor_class(A_caps,A_sw1,A_sw2,'Duty',duty);
+Dickson =  generic_switched_capacitor_class(ArchDef,'Duty',duty);
 
 %The functions only return the ouput nodes used in hybrid cell with the
 %excursion of the all dc-outputs
 OutNodes = 1:Dickson.n_outs;
 
 if ~dc_out
-
     if n_caps > 2
         OutNodes([Dickson.dc_out_cap end])=[];
     else
@@ -109,8 +108,8 @@ topology.eval_q_dc = @(x)... %Returns a function that evaluates the Output Imped
      subs(topology.q_dc,symvar(topology.q_dc),x); %of flying capacitances 
 
 topology.N_outs = length(topology.ratio);
-topology.N_sw     = size(A_sw1,2)+size(A_sw2,2);
-topology.N_caps   = size(A_caps,2);
+topology.N_sw     = Dickson.n_switches;
+topology.N_caps   = Dickson.n_caps;
 
 topology.ph = Dickson.phase;
 end

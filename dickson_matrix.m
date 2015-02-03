@@ -1,4 +1,4 @@
-function [ A_caps A_sw1 A_sw2 ] = dickson_matrix(n_stages,in_cap)
+function [ A_caps, A_sw1, A_sw2 ] = dickson_matrix(n_stages,in_cap)
 %% DICKSON_MATRIX Creates the incindence matrixes for an N_STAGES (#capacitors)
 % Dikson Ladder converter
 % 
