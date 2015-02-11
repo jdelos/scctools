@@ -73,6 +73,13 @@ else
     bounds = [0.1 0.9];
 end
 
+%% Averaged optimitzation
+if isfield(opt,'averaged')
+    avgFoM = opt.averaged;
+else
+    avgFoM = false; 
+end
+
 
 %% Set optimitzation functions
 options = optimset('fmincon');
@@ -85,8 +92,7 @@ N =  topology.N_sw;
 
 
 %% Generate Weighting Function
-avgFoM = 0; 
-if duty > 0 
+if avgFoM
     smplX = linspace(bounds(1),bounds(2),dst_points);
     x     =  -1:0.001:1;
     sig   = 1/sqrt(2*pi);

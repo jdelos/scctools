@@ -38,7 +38,7 @@ classdef SCC_Phase < handle
             PH.n_off_sw = size(inc_sw,2);
             PH.n_loads = size(inc_loads,2);
             PH.inc_on_conv_sw = [supply_branch inc_caps PH.inc_on_sw inc_loads];
-            PH.sw_idxs = idx_sw:(idx_sw-1)+PH.n_on_sw;
+            PH.sw_idxs = idx_sw;
         end
         
         %Return incidence matrix only containing capacitor and load elements
