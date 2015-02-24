@@ -87,8 +87,15 @@ topology.eval_q_dc = @(x)... %Returns a function that evaluates the Output Imped
 topology.N_outs = length(topology.ratio);
 topology.N_sw     = top.n_switches;
 topology.N_caps   = top.n_caps;
-
 topology.ph = top.phase;
+
+
+%% Map solver functions
+topology.Rssl     = @(Fsw,Cx,n_outputs)top.Rssl(Fsw,Cx,n_outputs);
+topology.Rfsl     = @(Ron,n_outputs)top.Rfsl(Ron,n_outputs);
+topology.Resr     = @(Cesr,n_outputs)top.Resr(Cesr,n_outputs);
+topology.Rscc     = @(Fsw,Cx,Ron,Cesr,n_outputs)top.Rscc(Fsw,Cx,Ron,Cesr,n_outputs);
+
 end
 
 

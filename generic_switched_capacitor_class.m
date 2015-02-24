@@ -1,6 +1,6 @@
 classdef generic_switched_capacitor_class < handle
-    %% SCC Switched Capacitor Class
-    %  Creates a SCC_class object that provides all the equations for a given       % SCC structure, of a multi-phase converter
+    %% objC Switched Capacitor Class
+    %  Creates a objC_class object that provides all the equations for a given       % objC structure, of a multi-phase converter
     %
     % The creator takes the following arguments:
     %    ArchDef --> Architecture description file, with the fields: 
@@ -10,8 +10,13 @@ classdef generic_switched_capacitor_class < handle
     %  Philips Research, Eindhoven,  Netherlands
     %  julia.delos@philps.com
 	% 
-	%  iss2: update -> 14 Nov 2014 
-    %
+	%  iss2: update --> 14 Nov 2014 (J.Delos)
+    %  iss3: enh    --> 24 Feb 2015 (J.Delos)  
+    %                   + Adding Rssl, Rfsl, Rser, Rscc functions 
+    %                   + Changed class referencing to obj has subggested in
+    %                   the Matlab class guidelines.
+    
+    
     
     %% Properties
     properties (SetAccess = private)
@@ -76,47 +81,48 @@ classdef generic_switched_capacitor_class < handle
     end
     
     methods
-        
-        function SC = generic_switched_capacitor_class(ArchDesc,varargin)
+        %iss3, jdelos: Changed class referecing name from obj to obj, as
+        %suggested in the Matlab guidelines.
+        function obj = generic_switched_capacitor_class(ArchDesc,varargin)
           %% iss2: input arguments method toallyu changed %%  
             %% Get Capacitor incidence matrix
             if isfield(ArchDesc,'Acaps')
-                SC.inc_caps = ArchDesc.Acaps;
+                obj.inc_caps = ArchDesc.Acaps;
             else
                 error('gen_scc:argChk','Missing Acaps field in the ArchDesc structure!')
             end
             
             %% Get Switch incidence matrix
             if isfield(ArchDesc,'Asw')
-                SC.inc_switches = ArchDesc.Asw;
+                obj.inc_switches = ArchDesc.Asw;
             else
                 error('gen_scc:argChk','Missing Asw field in the ArchDesc structure!')
             end
             
             %% Get Switch incidence matrix
             if isfield(ArchDesc,'Asw_act')
-                SC.SW_active = ArchDesc.Asw_act;
+                obj.SW_active = ArchDesc.Asw_act;
             else
                 error('gen_scc:argChk','Missing Asw field in the ArchDesc structure!')
             end
             
             %% Check matrices size consitancy
-            if (size(SC.inc_switches,1)~=size(SC.inc_caps,1)) 
+            if (size(obj.inc_switches,1)~=size(obj.inc_caps,1)) 
                 error('gen_scc:argChk','Different number of nodes between incidence matrices!')
             end 
             
-            if (size(SC.inc_switches,2)~=size(SC.SW_active,2))
+            if (size(obj.inc_switches,2)~=size(obj.SW_active,2))
                  error('gen_scc:argChk','Not consitency between Switch Activation and Incidence matrices!')
             end
             
             %% Get number of phases
-            SC.n_phases=size(SC.SW_active,1);
+            obj.n_phases=size(obj.SW_active,1);
             
             %% Number of loads
-            SC.n_nodes    = size(SC.inc_caps,1);
-            SC.n_outs     = SC.n_nodes; %One node is the input
-            SC.n_caps     = size(SC.inc_caps,2);
-            SC.n_switches = size(SC.inc_switches,2);
+            obj.n_nodes    = size(obj.inc_caps,1);
+            obj.n_outs     = obj.n_nodes; %One node is the input
+            obj.n_caps     = size(obj.inc_caps,2);
+            obj.n_switches = size(obj.inc_switches,2);
             
             %% Parse input arguments
             i=1;
@@ -124,93 +130,93 @@ classdef generic_switched_capacitor_class < handle
                 if ischar(varargin{i})
                     switch varargin{i}
                         case 'Mode'
-                            SC.mode=varargin{i+1};
+                            obj.mode=varargin{i+1};
                             i=i+2;
                         case 'InNode'
-                            SC.in_node=varargin{i+1};
+                            obj.in_node=varargin{i+1};
                             i=i+2;
                         case 'Duty'
                             try
-                                SC.duty = varargin{i+1};
+                                obj.duty = varargin{i+1};
                             catch %#ok<*CTCH>
-                                error('SCC:argChk','Wrong Duty vector');
+                                error('objC:argChk','Wrong Duty vector');
                             end
                             i=i+2;
                             
                         otherwise
-                            error('SCC:argChk','Unknown Parameter');
+                            error('objC:argChk','Unknown Parameter');
                             
                     end
                 end
             end
             
             %% Generate activation matrices
-            inc_sw_act = cell(1,SC.n_phases);
-            for j = 1:SC.n_phases
-                inc_sw_act{j} = SC.inc_switches(:,logical(SC.SW_active(j,:)));
+            inc_sw_act = cell(1,obj.n_phases);
+            for j = 1:obj.n_phases
+                inc_sw_act{j} = obj.inc_switches(:,logical(obj.SW_active(j,:)));
             end
             
             
             %Create converter Incidence Matrix
-            SC.incidence_matrix=[SC.inc_caps ...
-                inc_sw_act{1:SC.n_phases}];
+            obj.incidence_matrix=[obj.inc_caps ...
+                inc_sw_act{1:obj.n_phases}];
             
             
             %Switchinf frequency normalitzed respect 1
-            SC.fsw_op = 1;
+            obj.fsw_op = 1;
             
             %Initialize symbolic variables
-            SC.ron_switches=sym('Ron',[1 SC.n_switches]);
-            SC.caps=sym('C',[1 SC.n_caps]);
-            SC.esr_caps=sym('Resr',[1 SC.n_caps]);
+            obj.ron_switches=sym('Ron',[1 obj.n_switches]);
+            obj.caps=sym('C',[1 obj.n_caps]);
+            obj.esr_caps=sym('Resr',[1 obj.n_caps]);
             
             %Initialize Symbolir ducty vector
-            if isempty(SC.duty)
-                SC.duty=sym('D',[1 (SC.n_phases-1)]);
+            if isempty(obj.duty)
+                obj.duty=sym('D',[1 (obj.n_phases-1)]);
             end
             
             %Add last duty cycle
-            SC.duty(SC.n_phases)= 1-sum(SC.duty);
+            obj.duty(obj.n_phases)= 1-sum(obj.duty);
             
             %Create Loads incidence matrix
-            SC.inc_loads =  eye(SC.n_nodes);
+            obj.inc_loads =  eye(obj.n_nodes);
             
             %Initialize the incidence vector of the Voltage supply
             %The positive terminal is 1 and is defined by the InNode option
-            SC.supply_branch=zeros(SC.n_nodes,1);
-            if max(SC.in_node) <= SC.n_nodes
-                if length(SC.in_node) < 2
-                    SC.supply_branch(SC.in_node)=1;  %Input supply grounded
+            obj.supply_branch=zeros(obj.n_nodes,1);
+            if max(obj.in_node) <= obj.n_nodes
+                if length(obj.in_node) < 2
+                    obj.supply_branch(obj.in_node)=1;  %Input supply grounded
                     %In this case one test load is parallel to the voltage supply
                     % it will be removed from the incidence matrix
-                    SC.inc_loads(:,SC.in_node) = [];
+                    obj.inc_loads(:,obj.in_node) = [];
                 else
-                    SC.supply_branch(SC.in_node(1:2),1)=[1 -1]';  %Input supply is floating
+                    obj.supply_branch(obj.in_node(1:2),1)=[1 -1]';  %Input supply is floating
                 end
             end
             
             %Initialize Capacitor incidence matrix
-            %SC.input_cap = parallel_elem(SC.supply_branch,SC.inc_caps); %Identify the input capacitor
+            %obj.input_cap = parallel_elem(obj.supply_branch,obj.inc_caps); %Identify the input capacitor
             
             %if the input source is not connected through an inductor remove
             %capacitor in parallel to the voltage supply
-            if ~SC.mode
+            if ~obj.mode
                 %Buck mode
                 %Input capacitor is parallel to the supply
-                [~,~,ic]=unique([SC.supply_branch SC.inc_caps]','rows','stable');
+                [~,~,ic]=unique([obj.supply_branch obj.inc_caps]','rows','stable');
                 %Parallele capacitor branch
-                SC.input_cap=find(ic(2:end)==1,1,'last');
+                obj.input_cap=find(ic(2:end)==1,1,'last');
                 %Eliminate the capacitor branch
-                SC.inc_caps(:,SC.input_cap)=[];
-                SC.n_caps = size(SC.inc_caps,2);
+                obj.inc_caps(:,obj.input_cap)=[];
+                obj.n_caps = size(obj.inc_caps,2);
                 
                 %Remove the ESR and the Flying caps
-                SC.esr_caps(SC.input_cap)=[];
-                SC.caps(SC.input_cap)=[];
-                SC.n_inputs=1;
+                obj.esr_caps(obj.input_cap)=[];
+                obj.caps(obj.input_cap)=[];
+                obj.n_inputs=1;
                 
-                SC.n_nodes = size(SC.inc_caps,1);
-                SC.n_outs = SC.n_nodes-1; %One node is the input
+                obj.n_nodes = size(obj.inc_caps,1);
+                obj.n_outs = obj.n_nodes-1; %One node is the input
                 
             else
                 %Boost mode
@@ -219,102 +225,102 @@ classdef generic_switched_capacitor_class < handle
                 %be deleted from the incidence matrix
                 %Loads ar considered to be connected to ground
                 
-                SC.n_caps = size(SC.inc_caps,2);
+                obj.n_caps = size(obj.inc_caps,2);
                 
             end
             
             
             
             %initialise phase
-            if SC.n_phases >0
-                %SC.n_phases= length(varargin); %Number of phases
-                ph_lst = 1:SC.n_phases;
+            if obj.n_phases >0
+                %obj.n_phases= length(varargin); %Number of phases
+                ph_lst = 1:obj.n_phases;
                 
                 
                 for i=ph_lst %Switches matrixs
                        
                     %Current mode control function
-                    gload =@(x)(SC.duty(i)*(1-x) + x);
-                    gsrc  =@(x)(SC.duty(i)*x + (1-x));
+                    gload =@(x)(obj.duty(i)*(1-x) + x);
+                    gsrc  =@(x)(obj.duty(i)*x + (1-x));
                     
                     %Initialize phase
-                    SC.phase{i}=SCC_Phase(inc_sw_act{i},...
-                        SC.inc_caps,...
-                        SC.inc_switches(:,~logical(SC.SW_active(i,:))),...
-                        SC.inc_loads*gload(SC.mode),...
-                        SC.n_caps,...
-                        find(SC.SW_active(i,:)),...
-                        SC.supply_branch*gsrc(SC.mode));
+                    obj.phase{i}=SCC_Phase(inc_sw_act{i},...
+                        obj.inc_caps,...
+                        obj.inc_switches(:,~logical(obj.SW_active(i,:))),...
+                        obj.inc_loads*gload(obj.mode),...
+                        obj.n_caps,...
+                        find(obj.SW_active(i,:)),...
+                        obj.supply_branch*gsrc(obj.mode));
                     
                 end
                 %% #1 Multiphase [JD 5/21/2014]:This is the original code that was created
                 % to solve only two phase converters, this code will be commented once the
                 % a and b vector solvers are rewritten for mutiphase converters
-                if SC.n_phases > 1
-                    SC.a_vec_multiphase();
-                    SC.b_vec_multiphase();
-                    SC.gen_k();
+                if obj.n_phases > 1
+                    obj.a_vec_multiphase();
+                    obj.b_vec_multiphase();
+                    obj.gen_k();
                 end
             else
-                error('SCC:argChk','No phase matrixs!');
+                error('objC:argChk','No phase matrixs!');
             end
             
             
-            %SC.ar = abs( [SC.phase{1}.ar_vector((SC.n_caps+1):end,:);...
-            %    SC.phase{2}.ar_vector((SC.n_caps+1):end,:)]);
+            %obj.ar = abs( [obj.phase{1}.ar_vector((obj.n_caps+1):end,:);...
+            %    obj.phase{2}.ar_vector((obj.n_caps+1):end,:)]);
             
             %Normalized voltage at the caps respect input voltage
-            SC.caps_voltage_ratio();
+            obj.caps_voltage_ratio();
             
             %Normalized voltage at the switches respect input voltage
-            SC.switch_voltage_ratio();
+            obj.switch_voltage_ratio();
             
             %Get dc caps
-            dc_caps = logical(sum(SC.inc_caps,1));   %iss2: Changed find by logical boost speed
-            SC.dc_out_cap = find(sum([SC.inc_caps(:,dc_caps)...
-                SC.inc_loads],2)==2)-1;
+            dc_caps = logical(sum(obj.inc_caps,1));   %iss2: Changed find by logical boost speed
+            obj.dc_out_cap = find(sum([obj.inc_caps(:,dc_caps)...
+                obj.inc_loads],2)==2)-1;
         end
+        
         %% [#1,multiphase,JD,5/21/2014]: Function to compute the a vector for a
         % multiphase converter
-        
-        %% function a_vec_multiphase that solves the charge flow vectors from an SCC.
+        function a_vec_multiphase(obj)
+        %% function a_vec_multiphase that solves the charge flow vectors from an objC.
         % Is the extesion of the function for 2 phase converters
-        function a_vec_multiphase(SC)
-            Ql = cell(1,SC.n_phases);
+            Ql = cell(1,obj.n_phases);
             
             %Get cut-set matrix
-            for j=1:SC.n_phases
+            for j=1:obj.n_phases
                 %Create phase trees
-                Tph = tree_ph_scc(SC.phase{j}.get_on_no_sw(),...
-                    SC.n_caps,...
-                    SC.mode);
+                Tph = tree_ph_scc(obj.phase{j}.get_on_no_sw(),...
+                    obj.n_caps,...
+                    obj.mode);
                 %Generate cut-set matrices
-                Ql{j} = fun_cutset(SC.phase{j}.get_on_no_sw(),Tph);
+                Ql{j} = fun_cutset(obj.phase{j}.get_on_no_sw(),Tph);
             end
             %% Compute the charge flow vectors
-            [ al, m] = solve_charge_vectors(Ql,SC.n_caps,SC.duty);
+            [ al, m] = solve_charge_vectors(Ql,obj.n_caps,obj.duty);
             
             %% Update the converter structure
-            for p=1:SC.n_phases
-                SC.phase{p}.set_a_vector(al{p});
+            for p=1:obj.n_phases
+                obj.phase{p}.set_a_vector(al{p});
             end
             
             %% Update converter conversion ratio
-            SC.m_ratios=m;
-            SC.m_boost=1./m;
+            obj.m_ratios=m;
+            obj.m_boost=1./m;
         end
         
+        function b_vec_multiphase(obj)
         %% Function b_vec_multiphase
         % Replaced the b_vec_2phase providing a solver for the b vectors for
         % multiphase converters
-        
-        function b_vec_multiphase(SC)
-            for i=1:SC.n_phases
+
+            for i=1:obj.n_phases
                 %Short circuit source
-                A_sc = short_edge(SC.phase{i}.get_on_no_sw() ,1);
+                A_sc = short_edge(obj.phase{i}.get_on_no_sw() ,1);
                 
                 %Generate a tree using only capacitors
-                T_sc = build_tree(A_sc(:,1:SC.n_caps));
+                T_sc = build_tree(A_sc(:,1:obj.n_caps));
                 n_twings=length(T_sc);
                 
                 %Fundamental cut-set matrix for the tree
@@ -325,159 +331,335 @@ classdef generic_switched_capacitor_class < handle
                 
                 %Eliminate loops corresponding to the load sources
                 %Number of cap links
-                n_cap_links=SC.n_caps-n_twings;
+                n_cap_links=obj.n_caps-n_twings;
                 Bf_sc(n_cap_links+1:end,:)=[];
                 
                 %Transform capacitor votages to currents by the cap eq.
                 % C dV(t)/dt = i(t) => v(S)=i(s)/(sC) s term is droped out
-                Bf_sc(:,1:SC.n_caps)=(Bf_sc(:,1:SC.n_caps))/diag(SC.caps);
+                Bf_sc(:,1:obj.n_caps)=(Bf_sc(:,1:obj.n_caps))/diag(obj.caps);
                 
                 %Create a system of linear #Caps equations to sovle the current of the
                 %capacitors
                 %Use all the linear independent equations from Qf and the necessari from the
                 %Bf matrix
-                S = [ Qf_sc ; Bf_sc(1:SC.n_caps-size(Qf_sc,1),:)];
+                S = [ Qf_sc ; Bf_sc(1:obj.n_caps-size(Qf_sc,1),:)];
                 
                 %Split matrix with variables and excitations [Sx | So] beta solution is
                 % b = -Sx\So;
                 
-                b = -S(:,1:SC.n_caps)\S(:,SC.n_caps+1:end);
-                SC.phase{i}.set_b_vector(b);
+                b = -S(:,1:obj.n_caps)\S(:,obj.n_caps+1:end);
+                obj.phase{i}.set_b_vector(b);
+            end
+        end      
+        
+        function n_switch = get_n_switches(obj)
+            %Number of switches of the converter
+            if obj.n_phases > 0
+                n_switch = obj.phase{1}.n_on_sw + obj.phase{1}.n_off_sw;
             end
         end
         
-        %Number of switches of the converter
-        function n_switch = get_n_switches(SC)
-            if SC.n_phases > 0
-                n_switch = SC.phase{1}.n_on_sw + SC.phase{1}.n_off_sw;
-            end
-        end
-        
-        function gen_k_ssl(SC)
+        function gen_k_ssl(obj)
             
             %Compute the square terms of the rows and add them for each
             %phase
             %The resulting matrix is presented in the model format matrix
-            r_tot = matrix_2_expon(SC.phase{1}.get_r_vector()) ;
-            for i=2:SC.n_phases;
-                r_tot = matrix_2_expon(SC.phase{i}.get_r_vector()) + r_tot;
+            r_tot = matrix_2_expon(obj.phase{1}.get_r_vector()) ;
+            for i=2:obj.n_phases;
+                r_tot = matrix_2_expon(obj.phase{i}.get_r_vector()) + r_tot;
             end
             
             %Weight the factors with the Caps values and add them
-            SC.beta= D3_matrix_addition(r_tot,1./SC.caps);
-            SC.k_ssl = 1/(2*SC.fsw_op)*SC.beta;
-            SC.beta= diag(D3_matrix_addition(r_tot,1./SC.caps));
+            obj.beta= D3_matrix_addition(r_tot,1./obj.caps);
+            obj.k_ssl = 1/(2*obj.fsw_op)*obj.beta;
+            obj.beta= diag(D3_matrix_addition(r_tot,1./obj.caps));
             
             
         end
         
-        function k_ssl_a = gen_k_ssl_a(SC)
+        function k_ssl_a = gen_k_ssl_a(obj)
             
             %Compute the square terms of the rows and add them for each
             %phase
             %The resulting matrix is presented in the model format matrix
-            r_tot = matrix_2_expon(SC.phase{1}.get_ac_vector()) ;
-            for i=2:SC.n_phases;
-                r_tot = matrix_2_expon(SC.phase{i}.get_ac_vector()) + r_tot;
+            r_tot = matrix_2_expon(obj.phase{1}.get_ac_vector()) ;
+            for i=2:obj.n_phases;
+                r_tot = matrix_2_expon(obj.phase{i}.get_ac_vector()) + r_tot;
             end
             
             %Weight the factors with the Caps values and add them
-            SC.beta_a= D3_matrix_addition(r_tot,1./SC.caps);
-            SC.k_ssl_a = 1/(2*SC.fsw_op)*SC.beta_a;
-            SC.beta_a= diag(D3_matrix_addition(r_tot,1./SC.caps));
-            k_ssl_a = SC.k_ssl_a;
+            obj.beta_a= D3_matrix_addition(r_tot,1./obj.caps);
+            obj.k_ssl_a = 1/(2*obj.fsw_op)*obj.beta_a;
+            obj.beta_a= diag(D3_matrix_addition(r_tot,1./obj.caps));
+            k_ssl_a = obj.k_ssl_a;
             
         end
-        
-        
-        function gen_k_fsl(SC)
+                
+        function gen_k_fsl(obj)
             %Compute the square terms of the rows and add them for each
             %phase
             %The resulting matrix is presented in the model format matrix
-            k_fsl=zeros(SC.n_outs); %#ok<*PROP>
+            k_fsl=zeros(obj.n_outs); %#ok<*PROP>
             
                        
-            for i=1:SC.n_phases
-                if isempty(SC.ron_switches)
-                    sw_vector = [SC.esr_caps...
-                        sym(['R' num2str(i) '_s'], [1 SC.phase{i}.n_on_sw])];
+            for i=1:obj.n_phases
+                if isempty(obj.ron_switches)
+                    sw_vector = [obj.esr_caps...
+                        sym(['R' num2str(i) '_s'], [1 obj.phase{i}.n_on_sw])];
                 else
-                    sw_vector = [SC.esr_caps...
-                        SC.ron_switches(logical(SC.SW_active(i,:)))];
+                    sw_vector = [obj.esr_caps...
+                        obj.ron_switches(logical(obj.SW_active(i,:)))];
                 end
                 
-                k_fsl =1./(SC.duty(i)).*...
-                    D3_matrix_addition(matrix_2_expon(SC.phase{i}.get_ar_vector()),...
+                k_fsl =1./(obj.duty(i)).*...
+                    D3_matrix_addition(matrix_2_expon(obj.phase{i}.get_ar_vector()),...
                     sw_vector) + ...
                     k_fsl;
             end
-            SC.k_fsl = k_fsl;
+            obj.k_fsl = k_fsl;
             %Weight the factors with the Caps values and add them
         end
         
-        function gen_k(SC,varargin)
+        function gen_k(obj,varargin)
             %Check k factors
-            if isempty(SC.k_fsl)
-                SC.gen_k_fsl();
+            if isempty(obj.k_fsl)
+                obj.gen_k_fsl();
             end
             
-            if isempty(SC.k_ssl)
-                SC.gen_k_ssl();
+            if isempty(obj.k_ssl)
+                obj.gen_k_ssl();
             end
             
             %Best aproximation between the limtis is square summ
             %this aproximation should be checked in future work
-            SC.k_factors = (SC.k_ssl.^2 + SC.k_fsl.^2).^(1/2);
-            SC.r_buck = diag(SC.k_factors);
-            SC.k_boost = diag(SC.m_boost.^2)*SC.k_factors;
-            SC.r_boost = diag(SC.k_boost);
-            SC.r_ssl = diag(SC.k_ssl);
-            SC.r_fsl = diag(SC.k_fsl);
+            obj.k_factors = (obj.k_ssl.^2 + obj.k_fsl.^2).^(1/2);
+            obj.r_buck = diag(obj.k_factors);
+            obj.k_boost = diag(obj.m_boost.^2)*obj.k_factors;
+            obj.r_boost = diag(obj.k_boost);
+            obj.r_ssl = diag(obj.k_ssl);
+            obj.r_fsl = diag(obj.k_fsl);
             
         end
         
-        
+        function  caps_voltage_ratio(obj)
         %% Compute normalitzed voltage ration at each capacitor
         %Load effects are not taken into account
-        function  caps_voltage_ratio(SC)
             B=[];
-            for i=1:SC.n_phases
-                B =[B ; inM2loopM(SC.phase{i}.get_on_caps())]; %#ok<AGROW>
+            for i=1:obj.n_phases
+                B =[B ; inM2loopM(obj.phase{i}.get_on_caps())]; %#ok<AGROW>
             end
-            SC.v_caps_norm=(-B(:,2:end)\B(:,1));
+            obj.v_caps_norm=(-B(:,2:end)\B(:,1));
         end
-        
+         
+        function switch_voltage_ratio(obj)
         %% Compute nomralitzed blocking voltage at the devices
         %Load effecets are not taken into account
         %For two phase converters
-        function switch_voltage_ratio(SC)
-            %sw_volt=sym(zeros(1,SC.get_n_switches()));
-            sw_volt = zeros(SC.n_phases,SC.n_switches);
-            for i=1:SC.n_phases
+        
+            %sw_volt=sym(zeros(1,obj.get_n_switches()));
+            sw_volt = zeros(obj.n_phases,obj.n_switches);
+            for i=1:obj.n_phases
                 
-                idxs = 1:SC.n_switches;
-                for x = SC.phase{i}.sw_idxs
+                idxs = 1:obj.n_switches;
+                for x = obj.phase{i}.sw_idxs
                     idxs(x ==idxs) = [];
                 end
-                B = inM2loopM(SC.phase{i}.get_on_no_load());
+                B = inM2loopM(obj.phase{i}.get_on_no_load());
                 %Preserve only the loops where the switches are links
-                B = B((end-SC.phase{i}.n_off_sw)+1:end,:);
+                B = B((end-obj.phase{i}.n_off_sw)+1:end,:);
                 
                 %% Bloking voltage of the other phase switches
                 sw_volt(i,idxs) = ...
-                    -(B(:,(SC.n_caps+2):end)\B(:,1:(SC.n_caps+1))*...
-                    [1; SC.v_caps_norm]); %Solve the blocking voltages
+                    -(B(:,(obj.n_caps+2):end)\B(:,1:(obj.n_caps+1))*...
+                    [1; obj.v_caps_norm]); %Solve the blocking voltages
                 %sw_volt_max = max(sw_volt,sw_volt_max);
                 %sw_volt_min = min(sw_volt,sw_volt_min);
             end
-            SC.v_sw_frw = max(sw_volt,[],1);
-            SC.v_sw_rev = min(sw_volt,[],1);
-            [SC.v_sw_abs, I] = max(abs(sw_volt),[],1);
-            SC.v_sw_norm = zeros(1,SC.n_switches);
+            obj.v_sw_frw = max(sw_volt,[],1);
+            obj.v_sw_rev = min(sw_volt,[],1);
+            [obj.v_sw_abs, I] = max(abs(sw_volt),[],1);
+            obj.v_sw_norm = zeros(1,obj.n_switches);
             for j=1:length(I)
-                SC.v_sw_norm(j,I(j))= sw_volt(I(j),j);
+                obj.v_sw_norm(j,I(j))= sw_volt(I(j),j);
             end 
         end
+        
+        %% iss3, jdelos: Adding solver functions to the class
+        % Date: 24-Feb-2015        
+        function rssl = Rssl(obj,Fsw,Cx,n_outputs)
+        %%  function  [rssl] = Rssl(Cx,Fsw,[n_output])
+        % Returns the slow switching limit resitance (rssl) value for the topology
+        % This function is implemnted for non symbolic duty-cycles
+        %
+        % Input arguments:
+        %   + Cx : Value/s of the capacitors. If scalar all the capacitors are assumed to be equal.
+        %   + Fsw: Switching frequency. Scalar or array
+        %   +  n_outputs: Array with the necessary outputs to be solved. If not specified all outputs are solved.
+        %
+        
+            %Check Symbolic duty-cycle
+            if isa(obj.duty,'sym')
+                error('Parameters parser:','Duty cycle is a symbolic vairable')
+            end
+            
+            %Chec for the number of outputs
+            if nargin > 3
+                s_eqs = obj.r_ssl(n_outputs);
+            else
+                s_eqs = obj.r_ssl;
+            end
+            
+            %check if Cx is scalar 
+            if isscalar(Cx)
+                Cx= ones(1,obj.n_caps)*Cx;
+            else
+                if length(Cx)~= obj.n_caps
+                    error('Parameters parser:','Capacitor array length does not matche the number of capacitors in the topology!')
+                end
+            end
+            rssl = double(subs(s_eqs,obj.caps,Cx)./Fsw);
+            
+        end
+        
+        function rfsl = Rfsl(obj,Ron,n_outputs)
+        %%  function  [rfsl] = Rfsl(Ron,[n_output])
+        % Returns the fast switching limit resitance (rfsl) value for the topology
+        % This function is implemnted for non symbolic duty-cycles
+        %
+        % Input arguments:
+        %   + Ron       : Value/s of the resistors. If scalar all the capacitors are assumed to be equal.
+        %   + n_outputs : Array with the necessary outputs to be solved. If not specified all outputs are solved.
+        %
+        
+            %Check Symbolic duty-cycle
+            if isa(obj.duty,'sym')
+                error('Parameters parser:','Duty cycle is a symbolic vairable')
+            end
+                       
+            %Chec for the number of outputs
+            if nargin > 2
+                s_eqs = subs(obj.r_fsl(n_outputs),...
+                             obj.esr_caps,...
+                             zeros(1,obj.n_caps)) ;
+            else
+                s_eqs = subs(obj.r_fsl,...
+                               obj.esr_caps,...
+                               zeros(1,obj.n_caps)) ;
+            end
+            
+            %Remove the Cesr variables
+           
+            
+            %check if Cx is scalar 
+            if isscalar(Ron)
+                Ron = ones(1,obj.n_switches)*Ron;
+            else
+                if length(Ron)~= obj.n_switches
+                    error('Parameters parser:','Capacitor array length does not matche the number of capacitors in the topology!')
+                end
+            end
+            rfsl = double(subs(s_eqs,obj.ron_switches,Ron));
+        end
+        
+        function resr = Resr(obj,Cesr,n_outputs)
+        %%  function  [resr] = Resr(Cesr,[n_output])
+        % Returns the fast switching limit resitance (rfsl) value due to
+        % due to the Series Equivalent Resitance of the capacitors 
+        % This function is implemnted for non symbolic duty-cycles
+        %
+        % Input arguments:
+        %   + Cesr : Value/s of the ESR of the capacitors. If scalar all values are assumed to be equal.
+        %   +  n_outputs: Array with the necessary outputs to be solved. If not specified all outputs are solved.
+        %
+        
+            %Check Symbolic duty-cycle
+            if isa(obj.duty,'sym')
+                error('Parameters parser:','Duty cycle is a symbolic vairable')
+            end
+            
+            %Chec for the number of outputs
+            if nargin > 2
+                s_eqs = subs(obj.r_fsl(n_outputs),...
+                             obj.ron_switches,...
+                             zeros(1,obj.n_switches)) ;
+            else
+                s_eqs = subs(obj.r_fsl,...
+                               obj.ron_switches,...
+                               zeros(1,obj.n_switches)) ;
+            end
+            
+            %check if Cx is scalar 
+            if isscalar(Cesr)
+                Cesr = ones(1,obj.n_caps)*Cesr;
+            else
+                if length(Cesr)~= obj.n_caps
+                    error('Parameters parser:','Capacitor array length does not matche the number of capacitors in the topology!')
+                end
+            end
+            resr = double(subs(s_eqs,obj.esr_caps,Cesr));
+        end      
+        
+        function [rscc, fcut] = Rscc(obj,Fsw,Cx,Ron,Cesr,n_outputs)
+        %%  function  [resr] = Resr(Cesr,[n_output])
+        % Returns the fast switching limit resitance (rfsl) value due to
+        % due to the Series Equivalent Resitance of the capacitors 
+        % This function is implemnted for non symbolic duty-cycles
+        %
+        % Input arguments:
+        %   + Cx        : Value/s of the capacitors. If scalar all the capacitors are assumed to be equal.
+        %   + Fsw       : Switching frequency. Scalar or array.
+        %   + Ron       : Value/s of the resistors. If scalar all the capacitors are assumed to be equal.
+        %   + Cesr      : Value/s of the ESR of the capacitors. If scalar all values are assumed to be equal.
+        %   + n_outputs : Array with the necessary outputs to be solved. If not specified all outputs are solved.
+        %
+        
+            %Check Symbolic duty-cycle
+            if isa(obj.duty,'sym')
+                error('Parameters parser:','Duty cycle is a symbolic vairable')
+            end
+            
+            %if Number of arguments is bigger than 4 
+            % Cesr or n_caps has been specified 
+            switch nargin 
+                case {4,5} % Cesr has been specified 
+                    Rssl = obj.Rssl(Fsw,Cx);
+                    Rfsl = obj.Rfsl(Ron);
+                    
+                    if (nargin == 5) && ~isempty(Cesr)
+                        Resr = obj.Resr(Cesr);
+                    else
+                        Resr = [];
+                    end
+                    
+                case 6
+                    Rssl = obj.Rssl(Fsw,Cx,n_outputs);
+                    Rfsl = obj.Rfsl(Ron,n_outputs);
+                    
+                    if ~isempty(Cesr)
+                        Resr = obj.Resr(Cesr,n_outputs);
+                    else
+                        Resr = [];
+                    end
+            end
+            
+            rscc = sqrt(Rssl.^2 + (Resr+Rfsl).^2);
+            
+            if nargout == 2
+                % Get the specific Slow Switching Limit normalized w.r.t. 
+                % the switching frequency
+                Fssl = Rssl(1)*Fsw(1);
+                
+                %The cut frequency is where the Rssl and (Rfsl+Resr) are 
+                % equal
+                
+                fcut = Fssl/(Rfsl+Resr);
+                
+                
+                
+            end
+            
+        end      
+        
         
     end
 end

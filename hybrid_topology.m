@@ -88,6 +88,12 @@ topology.N_sw     = gen_top.n_switches;
 topology.N_caps   = gen_top.n_caps;
 
 topology.ph = gen_top.phase;
+topology.Rssl     = @(Fsw,Cx,n_outputs) gen_top.Rssl(Fsw,Cx,n_outputs);
+topology.Rfsl     = @(Ron,n_outputs)    gen_top.Rfsl(Ron,n_outputs);
+topology.Resr     = @(Cesr,n_outputs)   gen_top.Resr(Cesr,n_outputs);
+topology.Rscc     = @(Fsw,Cx,Ron,Cesr,n_outputs)    gen_top.Rscc(Fsw,Cx,Ron,Cesr,n_outputs);
+
+
 end
 
 
