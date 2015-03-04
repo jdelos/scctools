@@ -133,7 +133,9 @@ topology.Rssl     = @(Fsw,Cx,n_outputs) top.Rssl(Fsw,Cx,n_outputs);
 topology.Rfsl     = @(Ron,n_outputs)    top.Rfsl(Ron,n_outputs);
 topology.Resr     = @(Cesr,n_outputs)   top.Resr(Cesr,n_outputs);
 topology.Rscc     = @(Fsw,Cx,Ron,Cesr,n_outputs)    top.Rscc(Fsw,Cx,Ron,Cesr,n_outputs);
-
+% #4: Necessary to pass the entire genertic topology class for the
+% parasitic functionality 
+topology.g_top         = top;
 
 end
 
