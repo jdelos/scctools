@@ -27,8 +27,7 @@ end
 if ~all(A_aux(:,1:m))
     A_switched=A_aux(:,m+1:end);
 end
-    
-
+  
     
 end
 

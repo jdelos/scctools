@@ -35,7 +35,9 @@ classdef generic_switched_capacitor_class < handle
         inc_switches; %Incidence matrix switches
         inc_loads;   %Incidence matrix of loads
         
-        SW_active    %Matrix with the active switches
+        %iss4: J.Delos variable name changed to lower case. The name is now
+        %more clear 
+        sw_activation_matrix    %Matrix with the active switches
         inc_sw_act   %Phase activation matrix
         
         m_ratios;    %Conversion Ratio vector
@@ -101,7 +103,7 @@ classdef generic_switched_capacitor_class < handle
             
             %% Get Switch incidence matrix
             if isfield(ArchDesc,'Asw_act')
-                obj.SW_active = ArchDesc.Asw_act;
+                obj.sw_activation_matrix = ArchDesc.Asw_act;
             else
                 error('gen_scc:argChk','Missing Asw field in the ArchDesc structure!')
             end
@@ -111,12 +113,12 @@ classdef generic_switched_capacitor_class < handle
                 error('gen_scc:argChk','Different number of nodes between incidence matrices!')
             end 
             
-            if (size(obj.inc_switches,2)~=size(obj.SW_active,2))
+            if (size(obj.inc_switches,2)~=size(obj.sw_activation_matrix,2))
                  error('gen_scc:argChk','Not consitency between Switch Activation and Incidence matrices!')
             end
             
             %% Get number of phases
-            obj.n_phases=size(obj.SW_active,1);
+            obj.n_phases=size(obj.sw_activation_matrix,1);
             
             %% Number of loads
             obj.n_nodes    = size(obj.inc_caps,1);
@@ -151,16 +153,15 @@ classdef generic_switched_capacitor_class < handle
             end
             
             %% Generate activation matrices
-            inc_sw_act = cell(1,obj.n_phases);
+            obj.inc_sw_act = cell(1,obj.n_phases);
             for j = 1:obj.n_phases
-                inc_sw_act{j} = obj.inc_switches(:,logical(obj.SW_active(j,:)));
+                obj.inc_sw_act{j} = obj.inc_switches(:,logical(obj.sw_activation_matrix(j,:)));
             end
             
             
             %Create converter Incidence Matrix
             obj.incidence_matrix=[obj.inc_caps ...
-                inc_sw_act{1:obj.n_phases}];
-            
+                obj.inc_sw_act{1:obj.n_phases}];
             
             %Switchinf frequency normalitzed respect 1
             obj.fsw_op = 1;
@@ -244,12 +245,12 @@ classdef generic_switched_capacitor_class < handle
                     gsrc  =@(x)(obj.duty(i)*x + (1-x));
                     
                     %Initialize phase
-                    obj.phase{i}=SCC_Phase(inc_sw_act{i},...
+                    obj.phase{i}=SCC_Phase(obj.inc_sw_act{i},...
                         obj.inc_caps,...
-                        obj.inc_switches(:,~logical(obj.SW_active(i,:))),...
+                        obj.inc_switches(:,~logical(obj.sw_activation_matrix(i,:))),...
                         obj.inc_loads*gload(obj.mode),...
                         obj.n_caps,...
-                        find(obj.SW_active(i,:)),...
+                        find(obj.sw_activation_matrix(i,:)),...
                         obj.supply_branch*gsrc(obj.mode));
                     
                 end
@@ -408,7 +409,7 @@ classdef generic_switched_capacitor_class < handle
                         sym(['R' num2str(i) '_s'], [1 obj.phase{i}.n_on_sw])];
                 else
                     sw_vector = [obj.esr_caps...
-                        obj.ron_switches(logical(obj.SW_active(i,:)))];
+                        obj.ron_switches(logical(obj.sw_activation_matrix(i,:)))];
                 end
                 
                 k_fsl =1./(obj.duty(i)).*...
