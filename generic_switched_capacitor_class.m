@@ -481,9 +481,11 @@ classdef generic_switched_capacitor_class < handle
             [obj.v_sw_abs, I] = max(abs(sw_volt),[],1);
             obj.v_sw_norm = zeros(1,obj.n_switches);
             for j=1:length(I)
-                obj.v_sw_norm(j,I(j))= sw_volt(I(j),j);
+                obj.v_sw_norm(1,j)= sw_volt(I(j),j);
             end 
         end
+        
+        
         
         %% iss3, jdelos: Adding solver functions to the class
         % Date: 24-Feb-2015        

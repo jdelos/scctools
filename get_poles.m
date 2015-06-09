@@ -59,7 +59,7 @@ switch nargin
     end
     
     if isscalar(Cesr)
-        Lx = ones(1,top.n_caps)*Cesr;
+        Cesr = ones(1,top.n_caps)*Cesr;
     elseif   (top.n_caps ~= length(Cesr) )
         error('Arugments:Parsing',...
     'Cesr is not cosistent with number of capacitors in the  the topolgy'); 
@@ -80,7 +80,7 @@ for i_ph = 1:top.n_phases
     % That is the joint Capacitor and switches incidence matrix
     %Build the incidence matrix with switches
     Ar_eq = phase_conv([top.inc_caps  top.inc_sw_act{i_ph}],top.supply_branch);  
-    Rc = [Cesr Ron(top.phase{i_ph}.n_on_sw)];
+    Rc = [Cesr Ron(logical(top.sw_activation_matrix(i_ph,:))) ];
     %The frequency must be computed for each capacitor 
     for i_elem = 1:size(Ac_eq,2) 
         %Compute equivalent capacitor
@@ -89,8 +89,8 @@ for i_ph = 1:top.n_phases
         Ac_elem(:,i_elem)=[];
         Z_elem = Zc;
         Z_elem(i_elem) = [];
-        Req            = solve_zeq([Ac_test Ac_elem],Z_elem);
-        Ceq = [Cesr(i_elem) Req];
+        Zeq            = solve_zeq([Ac_test Ac_elem],Z_elem);
+        Ceq = Cx(i_elem)/(1+Cx(i_elem)*Zeq);
         Fo(i_ph,i_elem) = 1/(2*pi*sqrt(Ceq*Lx(i_elem))); 
         
         if q_flg
@@ -100,8 +100,8 @@ for i_ph = 1:top.n_phases
             Ar_elem(:,i_elem)=[];
             R_elem = Rc;
             R_elem(i_elem) = [];
-            Zeq             = solve_zeq([Ar_test Ar_elem],R_elem);
-            Req = Cx(i_elem)/(1+Cx(i_elem)*Zeq);
+            Req             = solve_zeq([Ar_test Ar_elem],R_elem);
+            Req = Cesr(i_elem)+Req;
             Qo(i_ph,i_elem) = 1/Req*sqrt(Lx(i_elem)/Ceq);
         end 
     end

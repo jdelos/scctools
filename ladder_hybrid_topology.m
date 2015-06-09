@@ -15,15 +15,26 @@ function [ topology ] = ladder_hybrid_topology(n_caps,duty,opt)
 %   May be freely used and modified but never sold.  The original author
 %   must be cited in all derivative work.
 
-dc_out = opt.dc_out;
-half_point = opt.half_point;
+if isfield(opt,'dc_out')
+    dc_out = opt.dc_out;
+else
+   dc_out = 1;  
+end
+
+if isfield(opt,'half_point')
+    half_point = opt.half_point;
+else
+    half_point = 0;  
+end
+
 
 if (nargin == 1) || isempty(duty) 
     duty = 0.5;
 end
 
+
 %% Generate the incidence matrixs
-[A_caps, A_sw1, A_sw2] = ladder_matrix(n_caps,0);
+ArchDef = ladder_arch(n_caps);
 
 %% Add half point conversion
 if half_point 
@@ -49,39 +60,38 @@ if half_point
 end
 
 %% Create class 
-Dickson =  generic_switched_capacitor_class(A_caps,A_sw1,A_sw2,'Duty',duty);
+top =  generic_switched_capacitor_class(ArchDef,'Duty',duty);
 
 %The functions only return the ouput nodes used in hybrid cell with the
 %excursion of the all dc-outputs
-OutNodes = 1:Dickson.n_outs;
+OutNodes = 1:top.n_outs;
 
 if ~dc_out
-
     if n_caps > 2
-        OutNodes([Dickson.dc_out_cap end])=[];
+        OutNodes([top.dc_out_cap end])=[];
     else
-        OutNodes([Dickson.dc_out_cap])=[];
+        OutNodes([top.dc_out_cap])=[];1
     end
 end
 
 
 %Generate output structures
-topology.ratio = Dickson.m_ratios(OutNodes);
+topology.ratio = top.m_ratios(OutNodes);
 %topology.ar = Dickson.ar(:,OutNodes);
 %topology.ac = Dickson.ac(:,OutNodes);
-topology.vc = Dickson.v_caps_norm.'; %Capacitor voltages voltages
-topology.vr = Dickson.v_sw_norm; %Switches voltages
-topology.Y_ssl = Dickson.k_ssl;
-topology.Y_fsl = Dickson.k_fsl;
+topology.vc = top.v_caps_norm.'; %Capacitor voltages voltages
+topology.vr = top.v_sw_norm; %Switches voltages
+topology.Y_ssl = top.k_ssl;
+topology.Y_fsl = top.k_fsl;
 
 topology.f_ssl = ... %Retrun the symbolic impedance function normalized respect 1Hz 
-    Dickson.r_ssl(OutNodes); 
+    top.r_ssl(OutNodes); 
 
 topology.f_fsl = ... %Retrun the symbolic fsl impedance function of the switches 
-    subs(Dickson.r_fsl(OutNodes),Dickson.esr_caps,zeros(1,Dickson.n_caps));
+    subs(top.r_fsl(OutNodes),top.esr_caps,zeros(1,top.n_caps));
 
 topology.f_esr = ... %Retrun the symbolic fsl impedance function of the esr capacitors 
-    subs(Dickson.r_fsl(OutNodes),Dickson.ron_switches,zeros(1,Dickson.n_switches));
+    subs(top.r_fsl(OutNodes),top.ron_switches,zeros(1,top.n_switches));
 
 topology.var_ssl = symvar(topology.f_ssl);
 
@@ -98,21 +108,29 @@ topology.eval_fesr = @(x)... %Returns a function that evaluates the Output Imped
      
 topology.vo_swing = 1/n_caps;
 topology.duty = duty;    
-topology.g = Dickson.k_factors;
+topology.g = top.k_factors;
 
-topology.dc_outputs = Dickson.dc_out_cap;
-topology.r = cat(3,Dickson.phase{1}.r_vector,Dickson.phase{2}.r_vector); 
+topology.dc_outputs = top.dc_out_cap;
+topology.r = cat(3,top.phase{1}.r_vector,top.phase{2}.r_vector); 
 topology.r_vars = symvar(topology.r);
 topology.eval_r =@(x) subs(topology.r,topology.r_vars,x);
-topology.q_dc = [Dickson.phase{1}.r_vector(end,Dickson.dc_out_cap) Dickson.phase{2}.r_vector(end,Dickson.dc_out_cap)];
+topology.q_dc = [top.phase{1}.r_vector(end,top.dc_out_cap) top.phase{2}.r_vector(end,top.dc_out_cap)];
 topology.eval_q_dc = @(x)... %Returns a function that evaluates the Output Impedance as function
      subs(topology.q_dc,symvar(topology.q_dc),x); %of flying capacitances 
 
-topology.N_outs = length(topology.ratio);
-topology.N_sw     = size(A_sw1,2)+size(A_sw2,2);
-topology.N_caps   = size(A_caps,2);
+topology.N_outs   = length(topology.ratio);
+topology.N_sw     = top.n_switches;
+topology.N_caps   = top.n_caps;
 
-topology.ph = Dickson.phase;
+topology.ph       = top.phase;
+topology.Rssl     = @(Fsw,Cx,n_outputs) top.Rssl(Fsw,Cx,n_outputs);
+topology.Rfsl     = @(Ron,n_outputs)    top.Rfsl(Ron,n_outputs);
+topology.Resr     = @(Cesr,n_outputs)   top.Resr(Cesr,n_outputs);
+topology.Rscc     = @(Fsw,Cx,Ron,Cesr,n_outputs)    top.Rscc(Fsw,Cx,Ron,Cesr,n_outputs);
+% #4: Necessary to pass the entire genertic topology class for the
+% parasitic functionality 
+topology.g_top         = top;
+
 end
 
 

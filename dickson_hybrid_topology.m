@@ -76,7 +76,7 @@ if ~dc_out
     if n_caps > 2
         OutNodes([top.dc_out_cap end])=[];
     else
-        OutNodes([top.dc_out_cap])=[];
+        OutNodes([top.dc_out_cap])=[];1
     end
 end
 
