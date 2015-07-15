@@ -23,7 +23,6 @@ function [cx, minFoM ] = dickson_optimizer_ssl (topology,opt)
 %  Philips Research, Eindhoven,  Netherlands
 %  julia.delos@philps.com
 %
-    
 
 
 %% Get mode value

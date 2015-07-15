@@ -81,6 +81,7 @@ topology.ratio = top.m_ratios(OutNodes);
 %topology.ac = Dickson.ac(:,OutNodes);
 topology.vc = top.v_caps_norm.'; %Capacitor voltages voltages
 topology.vr = top.v_sw_norm; %Switches voltages
+topology.is = top.i_sw_norm; %Capacitor voltages voltages
 topology.Y_ssl = top.k_ssl;
 topology.Y_fsl = top.k_fsl;
 

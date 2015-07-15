@@ -57,7 +57,6 @@ classdef generic_switched_capacitor_class < handle
         
         beta_a;
         
-        
         phase;       %Phase infromation
         duty;        %Duty cycle vector
         
@@ -67,6 +66,9 @@ classdef generic_switched_capacitor_class < handle
         v_sw_frw;
         v_sw_rev;
         
+        
+        i_sw_norm;    %Switches blocking voltage normailzet respect input voltage
+        i_sw_abs;     %Absoulte blocking voltage of the switches
         
         caps;         %symbolic parameters
         esr_caps;
@@ -276,10 +278,14 @@ classdef generic_switched_capacitor_class < handle
             %Normalized voltage at the switches respect input voltage
             obj.switch_voltage_ratio();
             
+                        
             %Get dc caps
             dc_caps = logical(sum(obj.inc_caps,1));   %iss2: Changed find by logical boost speed
             obj.dc_out_cap = find(sum([obj.inc_caps(:,dc_caps)...
                 obj.inc_loads],2)==2)-1;
+            
+            %Normalized current at the switches respect input voltage
+            obj.switch_current_ratio(obj.dc_out_cap(end));
         end
         
         %% [#1,multiphase,JD,5/21/2014]: Function to compute the a vector for a
@@ -483,6 +489,47 @@ classdef generic_switched_capacitor_class < handle
             for j=1:length(I)
                 obj.v_sw_norm(1,j)= sw_volt(I(j),j);
             end 
+        end
+        
+        %iss6: Added function
+        function switch_current_ratio(obj,N)
+        %% Compute nomralitzed current at the devices
+        %Load effecets are not taken into account
+        %For two phase converters
+        
+            %sw_volt=sym(zeros(1,obj.get_n_switches()));
+            sw_curr = zeros(obj.n_phases,obj.n_switches);
+            for i=1:obj.n_phases
+                idxs = 1:obj.n_switches;
+                idxs = idxs(obj.phase{i}.sw_idxs);
+                
+                ar_sw = obj.phase{i}.ar_vector((obj.n_caps+1):end,N).';
+                
+                sw_curr(i,idxs) = ar_sw ;
+            end
+            [obj.i_sw_abs, I] = max(abs(sw_curr),[],1);
+            obj.i_sw_norm = zeros(1,obj.n_switches);
+            for j=1:length(I)
+                obj.i_sw_norm(1,j)= sw_curr(I(j),j);
+            end 
+        end
+        
+        function ar = switch_current_ratio_N(obj,N)
+        %% Compute nomralitzed current at the devices
+        %Load effecets are not taken into account
+        %For two phase converters
+        
+            %sw_volt=sym(zeros(1,obj.get_n_switches()));
+            sw_curr = sym(zeros(1,obj.n_switches));
+            for i=1:obj.n_phases
+                idxs = 1:obj.n_switches;
+                idxs = idxs(obj.phase{i}.sw_idxs);
+                
+                ar_sw = obj.phase{i}.ar_vector((obj.n_caps+1):end,N).';
+                
+                sw_curr(1,idxs) = ar_sw ;
+            end
+            ar = sw_curr;
         end
         
         
