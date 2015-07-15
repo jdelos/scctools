@@ -27,36 +27,36 @@ if (nargin == 1) || isempty(duty)
 end
 
 %% Create class 
-gen_top =  generic_switched_capacitor_class(Arch,'Duty',duty);
+top =  generic_switched_capacitor_class(Arch,'Duty',duty);
 
 %The functions only return the ouput nodes used in hybrid cell with the
 %excursion of the all dc-outputs
-OutNodes = 1:gen_top.n_outs;
+OutNodes = 1:top.n_outs;
 
 if ~dc_out
     if n_caps > 2
-        OutNodes([gen_top.dc_out_cap end])=[];
+        OutNodes([top.dc_out_cap end])=[];
     else
-        OutNodes([gen_top.dc_out_cap])=[];
+        OutNodes([top.dc_out_cap])=[];
     end
 end
 
 
 %Generate output structures
-topology.ratio = gen_top.m_ratios(OutNodes);
-topology.vc = gen_top.v_caps_norm.'; %Capacitor voltages voltages
-topology.vr = gen_top.v_sw_norm; %Switches voltages
-topology.Y_ssl = gen_top.k_ssl;
-topology.Y_fsl = gen_top.k_fsl;
+topology.ratio = top.m_ratios(OutNodes);
+topology.vc = top.v_caps_norm.'; %Capacitor voltages voltages
+topology.vr = top.v_sw_norm; %Switches voltages
+topology.Y_ssl = top.k_ssl;
+topology.Y_fsl = top.k_fsl;
 
 topology.f_ssl = ... %Retrun the symbolic impedance function normalized respect 1Hz 
-    gen_top.r_ssl(OutNodes); 
+    top.r_ssl(OutNodes); 
 
 topology.f_fsl = ... %Retrun the symbolic fsl impedance function of the switches 
-    subs(gen_top.r_fsl(OutNodes),gen_top.esr_caps,zeros(1,gen_top.n_caps));
+    subs(top.r_fsl(OutNodes),top.esr_caps,zeros(1,top.n_caps));
 
 topology.f_esr = ... %Retrun the symbolic fsl impedance function of the esr capacitors 
-    subs(gen_top.r_fsl(OutNodes),gen_top.ron_switches,zeros(1,gen_top.n_switches));
+    subs(top.r_fsl(OutNodes),top.ron_switches,zeros(1,top.n_switches));
 
 topology.var_ssl = symvar(topology.f_ssl);
 
@@ -71,28 +71,30 @@ topology.var_fesr = symvar(topology.f_esr);
 topology.eval_fesr = @(x)... %Returns a function that evaluates the Output Impedance as function
      subs(topology.f_esr,topology.var_fesr,x); %of flying capacitances 
      
-topology.vo_swing = 1/gen_top.n_caps;
+topology.vo_swing = 1/top.n_caps;
 topology.duty = duty;    
-topology.g = gen_top.k_factors;
+topology.g = top.k_factors;
 
-topology.dc_outputs = gen_top.dc_out_cap;
-topology.r = cat(3,gen_top.phase{1}.r_vector,gen_top.phase{2}.r_vector); 
+topology.dc_outputs = top.dc_out_cap;
+topology.r = cat(3,top.phase{1}.r_vector,top.phase{2}.r_vector); 
 topology.r_vars = symvar(topology.r);
 topology.eval_r =@(x) subs(topology.r,topology.r_vars,x);
-topology.q_dc = [gen_top.phase{1}.r_vector(end,gen_top.dc_out_cap) gen_top.phase{2}.r_vector(end,gen_top.dc_out_cap)];
+topology.q_dc = [top.phase{1}.r_vector(end,top.dc_out_cap) top.phase{2}.r_vector(end,top.dc_out_cap)];
 topology.eval_q_dc = @(x)... %Returns a function that evaluates the Output Impedance as function
      subs(topology.q_dc,symvar(topology.q_dc),x); %of flying capacitances 
 
 topology.N_outs = length(topology.ratio);
-topology.N_sw     = gen_top.n_switches;
-topology.N_caps   = gen_top.n_caps;
+topology.N_sw     = top.n_switches;
+topology.N_caps   = top.n_caps;
 
-topology.ph = gen_top.phase;
-topology.Rssl     = @(Fsw,Cx,n_outputs) gen_top.Rssl(Fsw,Cx,n_outputs);
-topology.Rfsl     = @(Ron,n_outputs)    gen_top.Rfsl(Ron,n_outputs);
-topology.Resr     = @(Cesr,n_outputs)   gen_top.Resr(Cesr,n_outputs);
-topology.Rscc     = @(Fsw,Cx,Ron,Cesr,n_outputs)    gen_top.Rscc(Fsw,Cx,Ron,Cesr,n_outputs);
-
+topology.ph = top.phase;
+topology.Rssl     = @(Fsw,Cx,n_outputs) top.Rssl(Fsw,Cx,n_outputs);
+topology.Rfsl     = @(Ron,n_outputs)    top.Rfsl(Ron,n_outputs);
+topology.Resr     = @(Cesr,n_outputs)   top.Resr(Cesr,n_outputs);
+topology.Rscc     = @(Fsw,Cx,Ron,Cesr,n_outputs)    top.Rscc(Fsw,Cx,Ron,Cesr,n_outputs);
+% #4: Necessary to pass the entire genertic topology class for the
+% parasitic functionality 
+topology.g_top         = top;
 
 end
 
