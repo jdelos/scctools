@@ -129,8 +129,8 @@ end
 if (min(mode) > 0) && (max(mode) <= N_outs )
     if isscalar(mode)
         if ~avgFoM %Single point optimitzation
-            FoM = @(x)subs(topology.f_ssl(mode),...
-                symvar(topology.f_ssl),x);
+            FoM = @(x) eval(subs(topology.f_ssl(mode),...
+                symvar(topology.f_ssl),[x opt.duty]));
         else %Averaged optimitzation
            FoM = sym(0);
            for j = 1:dst_points 
@@ -143,7 +143,7 @@ if (min(mode) > 0) && (max(mode) <= N_outs )
         mode = unique(mode);
         if ~avgFoM %Single point optimitzation
             FoM = @(x)subs(sum(topology.f_ssl(mode)),...
-                symvar(topology.f_ssl),x);
+                symvar(topology.f_ssl),[x opt.duty]);
         else
            FoM = sym(0);
            for j = 1:dst_points 
