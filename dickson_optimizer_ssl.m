@@ -142,8 +142,8 @@ if (min(mode) > 0) && (max(mode) <= N_outs )
     else
         mode = unique(mode);
         if ~avgFoM %Single point optimitzation
-            FoM = @(x)subs(sum(topology.f_ssl(mode)),...
-                symvar(topology.f_ssl),[x opt.duty]);
+            FoM = @(x)eval(subs(sum(topology.f_ssl(mode)),...
+                symvar(topology.f_ssl),[x opt.duty]));
         else
            FoM = sym(0);
            for j = 1:dst_points 
