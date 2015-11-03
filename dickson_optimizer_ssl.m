@@ -80,6 +80,17 @@ else
     log = 'off';
 end
 
+%% Optimitzation display 
+if isfield(opt,'iOut')
+    iOut = opt.iOut;
+else
+    if ~isscalar(mode)
+        nx = length(mode);
+        iOut = ones(1,nx);
+    end
+end
+
+
 
 %% Configure optimizer
 options = optimset('fmincon');
@@ -142,7 +153,10 @@ if (min(mode) > 0) && (max(mode) <= N_outs )
     else
         mode = unique(mode);
         if ~avgFoM %Single point optimitzation
-            FoM = @(x)eval(subs(sum(topology.f_ssl(mode)),...
+%             FoM = @(x)eval(subs(sum(topology.f_ssl(mode)),...
+%                 symvar(topology.f_ssl),[x opt.duty]));
+%             
+            FoM = @(x)eval(subs(iOut.^2*topology.f_ssl(mode),...
                 symvar(topology.f_ssl),[x opt.duty]));
         else
            FoM = sym(0);
