@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Derivative Chat</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f5f5f5;
+      }
+      #chatbox {
+        width: 60%;
+        margin: 20px auto;
+        background: #fff;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      }
+      .message {
+        margin: 10px 0;
+        padding: 10px;
+        border-radius: 5px;
+      }
+      .user {
+        background-color: #d1e7dd;
+        text-align: right;
+      }
+      .bot {
+        background-color: #f8d7da;
+        text-align: left;
+      }
+      #inputField {
+        width: 80%;
+        padding: 10px;
+        border-radius: 4px;
+        border: 1px solid #ccc;
+      }
+      #submitBtn {
+        padding: 10px 15px;
+        border: none;
+        background-color: #0d6efd;
+        color: white;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="chatbox">
+      <h2>🧮 Derivative Chat</h2>
+      <div id="messages"></div>
+      <input
+        type="text"
+        id="expressionInput"
+        placeholder="Enter expression (e.g., x^2 + 3*x)"
+      />
+      <input
+        type="text"
+        id="variableInput"
+        placeholder="Differentiate w.r.t (e.g., x)"
+      />
+      <button id="submitBtn">Differentiate</button>
+    </div>
+
+    <script>
+      
+      console.log("Js Running! Yah 🥳")
+
+      // Load the WebAssembly module
+      var Module = {
+        onRuntimeInitialized: function () {
+          console.log("WebAssembly module loaded");
+          const differentiate = Module.cwrap("differentiate", "string", [
+            "string",
+            "string",
+          ]);
+
+          document.getElementById("submitBtn").onclick = function () {
+            const expr = document.getElementById("expressionInput").value;
+            const variable = document.getElementById("variableInput").value;
+            console.log(expr, variable);
+
+            if (expr && variable) {
+              appendMessage(`Expression: ${expr}`, "user");
+              const result = differentiate(expr, variable);
+              appendMessage(`Derivative: ${result}`, "bot");
+            } else {
+              appendMessage(
+                "❗ Please enter both an expression and a variable.",
+                "bot",
+              );
+            }
+          };
+        },
+      };
+
+      function appendMessage(message, sender) {
+        const msgDiv = document.createElement("div");
+        msgDiv.className = `message ${sender}`;
+        msgDiv.innerText = message;
+        document.getElementById("messages").appendChild(msgDiv);
+      }
+    </script>
+    <script src="interactive.js"></script>
+
+  </body>
+</html>

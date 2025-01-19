@@ -192,7 +192,7 @@ end
 
 %% Launch optimitzation
 if isempty(fcond)
-    [cx, minFoM, flg] = fmincon(@(x)FoM(x), x0, A, B,Aeq,Beq,lb,ub,...
+    [cx, minFoM, flg] = fmincon(@(x) double(FoM(x)), x0, A, B,Aeq,Beq,lb,ub,...
     [],options); 
 end
 

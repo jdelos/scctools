@@ -1,0 +1,2 @@
+../test-driver: line 107: ./t-hightomask: Permission denied
+FAIL t-hightomask (exit status: 126)

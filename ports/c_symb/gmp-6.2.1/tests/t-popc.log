@@ -1,0 +1,2 @@
+../test-driver: line 107: ./t-popc: Permission denied
+FAIL t-popc (exit status: 126)

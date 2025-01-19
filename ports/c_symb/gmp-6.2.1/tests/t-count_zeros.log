@@ -1,0 +1,2 @@
+../test-driver: line 107: ./t-count_zeros: Permission denied
+FAIL t-count_zeros (exit status: 126)

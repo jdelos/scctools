@@ -1,0 +1,2 @@
+../test-driver: line 107: ./t-bswap: Permission denied
+FAIL t-bswap (exit status: 126)

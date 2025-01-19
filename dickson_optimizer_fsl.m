@@ -152,7 +152,7 @@ B = zeros([N 1]);
 lb(1:N,1)=0.005;
 ub = ones(1,N);
 
-[rx, minFoM ] = fmincon(@(x)FoM(x), x0, A, B,Aeq,Beq,lb,ub,[],options);
+[rx, minFoM ] = fmincon(@(x)double(FoM(x)), x0, A, B,Aeq,Beq,lb,ub,[],options);
 if isfield(opt,'rxua')
     FoM = FoM*opt.rxua(1); % Bring normalitzation back
 end

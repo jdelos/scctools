@@ -1,0 +1,62 @@
+========================================
+   GNU MP 6.2.1: tests/test-suite.log
+========================================
+
+# TOTAL: 8
+# PASS:  0
+# SKIP:  0
+# XFAIL: 0
+# FAIL:  8
+# XPASS: 0
+# ERROR: 0
+
+.. contents:: :depth: 2
+
+FAIL: t-bswap
+=============
+
+../test-driver: line 107: ./t-bswap: Permission denied
+FAIL t-bswap (exit status: 126)
+
+FAIL: t-constants
+=================
+
+../test-driver: line 107: ./t-constants: Permission denied
+FAIL t-constants (exit status: 126)
+
+FAIL: t-count_zeros
+===================
+
+../test-driver: line 107: ./t-count_zeros: Permission denied
+FAIL t-count_zeros (exit status: 126)
+
+FAIL: t-hightomask
+==================
+
+../test-driver: line 107: ./t-hightomask: Permission denied
+FAIL t-hightomask (exit status: 126)
+
+FAIL: t-modlinv
+===============
+
+../test-driver: line 107: ./t-modlinv: Permission denied
+FAIL t-modlinv (exit status: 126)
+
+FAIL: t-popc
+============
+
+../test-driver: line 107: ./t-popc: Permission denied
+FAIL t-popc (exit status: 126)
+
+FAIL: t-parity
+==============
+
+../test-driver: line 107: ./t-parity: Permission denied
+FAIL t-parity (exit status: 126)
+
+FAIL: t-sub
+===========
+
+../test-driver: line 107: ./t-sub: Permission denied
+FAIL t-sub (exit status: 126)
+

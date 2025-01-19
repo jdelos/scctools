@@ -1,0 +1,2 @@
+../test-driver: line 107: ./t-parity: Permission denied
+FAIL t-parity (exit status: 126)

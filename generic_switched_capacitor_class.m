@@ -179,7 +179,7 @@ classdef generic_switched_capacitor_class < handle
             end
             
             %Add last duty cycle
-            obj.duty(obj.n_phases)= 1-sum(obj.duty);
+            obj.duty(obj.n_phases)= 1- obj.duty;
             
             %Create Loads incidence matrix
             obj.inc_loads =  eye(obj.n_nodes);
