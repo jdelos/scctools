@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dickson Matrix WASM Test</title>
+    <script src="test_dickson_matrix.js"></script>
+</head>
+<body>
+    <h1>Testing Dickson Matrix WebAssembly</h1>
+    <script>
+        Module.onRuntimeInitialized = function() {
+            console.log("WebAssembly Module Loaded");
+
+            const n_stages = 4;
+            const in_cap = 1;
+            const caps_rows = n_stages + 2;
+            const caps_cols = n_stages;
+            const sw1_rows = n_stages + 3;
+            const sw1_cols = 4;
+            const sw2_rows = n_stages + 3;
+            const sw2_cols = 3;
+
+            let A_caps = new Int32Array(caps_rows * caps_cols);
+            let A_sw1 = new Int32Array(sw1_rows * sw1_cols);
+            let A_sw2 = new Int32Array(sw2_rows * sw2_cols);
+
+            Module._dickson_matrix(n_stages, in_cap, 
+                A_caps.byteOffset, caps_rows, caps_cols, 
+                A_sw1.byteOffset, sw1_rows, sw1_cols, 
+                A_sw2.byteOffset, sw2_rows, sw2_cols);
+
+            console.log("A_caps:", A_caps);
+            console.log("A_sw1:", A_sw1);
+            console.log("A_sw2:", A_sw2);
+        };
+    </script>
+</body>
+</html>
