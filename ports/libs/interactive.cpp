@@ -31,4 +31,25 @@ const char* differentiate(const char* expr_str, const char* var_str) {
     return result_str.c_str();
 }
 
+const char* integrate(const char* expr_str, const char* var_str) {
+    static std::string result_str;  // Persistent buffer
+
+    try {
+        // Define the variable and expression
+        Expression var(symbol(var_str));
+        Expression expr(expr_str);
+
+        // Differentiate the expression
+        Expression result = expr.int(var);
+
+        // Convert to string
+        result_str = result.get_basic()->__str__();
+    } catch (...) {
+        result_str = "Error: Invalid expression.";
+    }
+
+    return result_str.c_str();
+}
+
+
 }
