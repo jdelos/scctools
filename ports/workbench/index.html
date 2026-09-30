@@ -7,6 +7,6 @@
 <script src="fixtures.js"></script><script>
 const result = document.querySelector('#result'), errors = document.querySelector('#errors');
 const worker = new Worker('worker.js');
-worker.onmessage = ({data}) => { if (data.type === 'error') { errors.textContent = JSON.stringify(data.error, null, 2); result.textContent = 'No result'; return; } errors.textContent = 'None'; result.className = 'ok'; result.innerHTML = `<strong>Fixture v${data.version}: ${data.state.label}</strong><pre>${JSON.stringify(data.state, null, 2)}</pre>`; };
+worker.onmessage = ({data}) => { if (data.type === 'error') { errors.textContent = JSON.stringify(data.error, null, 2); result.className = ''; result.textContent = 'No result'; return; } errors.textContent = 'None'; result.className = 'ok'; result.innerHTML = `<strong>Fixture v${data.version}: ${data.state.label}</strong><pre>${JSON.stringify(data.state, null, 2)}</pre>`; };
 document.querySelector('#run').onclick = () => { result.textContent = 'Rendering…'; errors.textContent = 'None'; worker.postMessage({ fixture: document.querySelector('#fixture').value, stages: document.querySelector('#stages').value, phases: document.querySelector('#phases').value }); };
 </script></body></html>
