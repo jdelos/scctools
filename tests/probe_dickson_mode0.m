@@ -3,13 +3,15 @@ function report = probe_dickson_mode0()
 % Failure reports preserve graph/tree/cut-set shapes; no production behavior changes.
 if exist('OCTAVE_VERSION','builtin'), pkg load symbolic; end
 addpath(fileparts(fileparts(mfilename('fullpath'))));
-report = struct('schema_version','scctools.issue27.mode0.v1', ...
+report = struct('schema_version','scctools.issue27.mode0.v2', ...
+    'serializer_version','ordered-string-matrix.v1', ...
     'runtime',version,'package','symbolic','commit',git_commit(), ...
     'units','incidence entries dimensionless; duties fractions; A and m normalized', ...
     'assumptions','D symbolic; dc_out=true; half_point=false; normal mode means no Mode argument; exact shapes', ...
     'tolerances','exact symbolic equality; no numeric tolerance', 'cases',[]);
 for n_caps = [2 3]
-    c = struct('n_caps',n_caps,'adapter',empty_result(), ...
+    c = struct('n_caps',n_caps,'architecture',encode_arch(dickson_arch(n_caps)), ...
+        'adapter',empty_result(), ...
         'direct_generic',empty_result(),'comparison',struct());
     c.adapter = run_adapter(n_caps);
     c.direct_generic = run_direct(n_caps);
@@ -17,10 +19,15 @@ for n_caps = [2 3]
         error('probe:Mismatch','Adapter/direct success mismatch for n_caps=%d',n_caps);
     end
     if c.adapter.success
-        if ~isequal(c.adapter.m_ratios,c.direct_generic.m_ratios)
-            error('probe:Mismatch','Adapter/direct m_ratios mismatch for n_caps=%d',n_caps);
+        if ~isequal(c.adapter.m_ratios,c.direct_generic.m_ratios) || ...
+                ~isequal(c.adapter.duties,c.direct_generic.duties) || ...
+                ~isequal(c.adapter.A,c.direct_generic.A)
+            error('probe:Mismatch','Adapter/direct serialized output mismatch for n_caps=%d',n_caps);
         end
+        assert(isstruct(c.adapter.m_ratios) && isfield(c.adapter.m_ratios,'values'));
         c.comparison.m_ratios_equal = true;
+        c.comparison.duties_equal = true;
+        c.comparison.A_equal = true;
     else
         c.comparison.error_identifiers_equal = strcmp(c.adapter.error.identifier,c.direct_generic.error.identifier);
         c.comparison.error_messages_equal = strcmp(c.adapter.error.message,c.direct_generic.error.message);
@@ -40,9 +47,9 @@ r=empty_result();
 try
     t=dickson_hybrid_topology(n,sym('D'),struct('dc_out',true,'half_point',false));
     assert(isstruct(t) && isfield(t,'g_top'),'adapter construction failed');
-    r.success=true; r.m_ratios=t.g_top.m_ratios; r.duties=t.g_top.duty;
+    r.success=true; r.m_ratios=encode_matrix(t.g_top.m_ratios); r.duties=encode_matrix(t.g_top.duty);
     r.A=cell(1,numel(t.g_top.phase));
-    for p=1:numel(t.g_top.phase), r.A{p}=t.g_top.phase{p}.get_a_vector(); end
+    for p=1:numel(t.g_top.phase), r.A{p}=encode_matrix(t.g_top.phase{p}.get_a_vector()); end
 catch e
     r.error=err_struct(e);
 end
@@ -52,12 +59,29 @@ r=empty_result();
 try
     t=generic_switched_capacitor_class(dickson_arch(n),'Duty',sym('D'));
     assert(isa(t,'generic_switched_capacitor_class'),'generic construction failed');
-    r.success=true; r.m_ratios=t.m_ratios; r.duties=t.duty;
+    r.success=true; r.m_ratios=encode_matrix(t.m_ratios); r.duties=encode_matrix(t.duty);
     r.A=cell(1,numel(t.phase));
-    for p=1:numel(t.phase), r.A{p}=t.phase{p}.get_a_vector(); end
+    for p=1:numel(t.phase), r.A{p}=encode_matrix(t.phase{p}.get_a_vector()); end
 catch e
     r.error=err_struct(e);
 end
+end
+function x = encode_arch(a)
+x=struct('Acaps',encode_matrix(a.Acaps),'Asw',encode_matrix(a.Asw), ...
+    'Asw_act',encode_matrix(a.Asw_act));
+end
+function x = encode_matrix(a)
+% Exact strings, nested row-major values, explicit shape/order metadata.
+x=struct('rows',size(a,1),'cols',size(a,2),'order','row-major','values',{{}});
+x.values=cell(size(a,1),size(a,2));
+for i=1:size(a,1)
+    for j=1:size(a,2), x.values{i,j}=encode_scalar(a(i,j)); end
+end
+end
+function x = encode_scalar(v)
+if isa(v,'sym'), x=char(v);
+elseif isnumeric(v) || islogical(v), x=sprintf('%.17g',double(v));
+else, error('probe:UnsupportedValue','Unsupported fixture value class %s',class(v)); end
 end
 function x = err_struct(e)
 x=struct('identifier',e.identifier,'message',e.message,'stack',[]);
