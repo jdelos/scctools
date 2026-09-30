@@ -26,7 +26,13 @@ const { submitToWasm } = require('../workbench/worker-core.js');
   ]);
   assert.deepEqual(result.m, [['0.75'], ['0.5'], ['0.25']]);
   assert.deepEqual(result.metadata, { native: true, provenance: 'native-qfa' });
-  assert.equal(submitToWasm({ ...JSON.parse(request), phases: 3 }, wasm).error.code, 'UNSUPPORTED_PHASE_COUNT');
+  assert.equal(submitToWasm({ phases: 3, duty: 0.5, version: 1, capacitors: 2, architecture: 'qfa-graph', stages: 2 }, wasm).error.code, 'UNSUPPORTED_PHASE_COUNT');
   assert.equal(submitToWasm({ ...JSON.parse(request), capacitors: 1 }, wasm).error.code, 'INVALID_INPUT');
+  const singular = submitToWasm({
+    cutsets: [[[0, 0, 0]], [[0, 0, 0], [0, 0, 0]]],
+    duty: [0.5, 0.5], capacitors: 1,
+    operation: 'solve-charge-vectors', version: 1
+  }, wasm);
+  assert.equal(singular.error.code, 'SINGULAR_SYSTEM');
   console.log('generated WASM boundary passed');
 })().catch((error) => { console.error(error); process.exitCode = 1; });

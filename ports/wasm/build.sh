@@ -39,7 +39,7 @@ exec docker run --rm -v "$ROOT:/src" -w /src "$IMAGE" sh -eu -c '
   symengine_lib=$(find "$sym_build" -name libsymengine.a -print -quit); gmp_lib="$gmp_prefix/lib/libgmp.a"
   cd /src
   mkdir -p ports/wasm
-  em++ -std=c++17 -O2 -Iports/include -I"$sources/symengine-0.13.0" -I"$sym_build" -I"$gmp_prefix/include" -s MODULARIZE=1 -s EXPORT_ES6=0 -s EXPORT_NAME=ScctoolsModule -s EXPORTED_FUNCTIONS="['_malloc','_free','_scctools_submit_json','_scctools_free']" ports/src/*.cpp "$symengine_lib" "$gmp_lib" -o ports/wasm/scctools.js
+  em++ -std=c++17 -O2 -Iports/include -I"$sources/symengine-0.13.0" -I"$sym_build" -I"$gmp_prefix/include" -s DISABLE_EXCEPTION_CATCHING=0 -s MODULARIZE=1 -s EXPORT_ES6=0 -s EXPORT_NAME=ScctoolsModule -s EXPORTED_FUNCTIONS="['_malloc','_free','_scctools_submit_json','_scctools_free']" ports/src/*.cpp "$symengine_lib" "$gmp_lib" -o ports/wasm/scctools.js
   test -s ports/wasm/scctools.js
   test -s ports/wasm/scctools.wasm
 '
