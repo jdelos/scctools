@@ -7,8 +7,8 @@
 #include <symengine/integer.h>
 
 ArchDef dickson_arch(int n_caps) {
-    if (n_caps != 2 && n_caps != 3) {
-        throw std::invalid_argument("dickson_arch supports n_caps 2 or 3");
+    if (n_caps < 2) {
+        throw std::invalid_argument("dickson_arch requires n_caps >= 2");
     }
 
     std::vector<std::vector<int>> caps, sw1, sw2;
@@ -17,6 +17,16 @@ ArchDef dickson_arch(int n_caps) {
     ArchDef arch{SymEngine::DenseMatrix(caps.size(), caps[0].size()),
                  SymEngine::DenseMatrix(sw1.size(), n_switches),
                  SymEngine::DenseMatrix(2, n_switches)};
+    const auto zero = SymEngine::integer(0);
+    for (unsigned r = 0; r < arch.Acaps.nrows(); ++r)
+        for (unsigned c = 0; c < arch.Acaps.ncols(); ++c)
+            arch.Acaps.set(r, c, zero);
+    for (unsigned r = 0; r < arch.Asw.nrows(); ++r)
+        for (unsigned c = 0; c < arch.Asw.ncols(); ++c)
+            arch.Asw.set(r, c, zero);
+    for (unsigned r = 0; r < arch.Asw_act.nrows(); ++r)
+        for (unsigned c = 0; c < arch.Asw_act.ncols(); ++c)
+            arch.Asw_act.set(r, c, zero);
     for (unsigned r = 0; r < caps.size(); ++r)
         for (unsigned c = 0; c < caps[r].size(); ++c)
             arch.Acaps.set(r, c, SymEngine::integer(caps[r][c]));
