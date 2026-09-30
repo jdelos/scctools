@@ -16,6 +16,9 @@ struct Topology {
     std::vector<SCCPhase> phase;
 };
 
+Topology dickson_hybrid_topology(int n_caps, const SymEngine::Expression &duty,
+                                 const std::vector<SymEngine::RCP<const SymEngine::Symbol>> &symbols,
+                                 bool dc_out, bool half_point);
 Topology dickson_hybrid_topology(int n_caps, double duty, bool dc_out, bool half_point);
 
 #endif
