@@ -241,6 +241,8 @@ if (flip == 1),
     ratio = 1/ratio;
 end
 
+% Keep legacy Seeman schema distinct from graph-based QFA producers.
+result.schema = 'scctools.matlab.seeman.v1';
 result.topName = topology_name;
 result.ac = ac;
 result.vc = vc;

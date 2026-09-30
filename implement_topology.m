@@ -15,7 +15,12 @@ function implementation = implement_topology(topology, Vin, switchTechs,...
 %   May be freely used and modified but never sold.  The original author
 %   must be cited in all derivative work.
 
-% Break out components of topology structure
+% Break out components of legacy Seeman topology structure.
+if ~isstruct(topology) || ~isfield(topology, 'schema') || ...
+        ~strcmp(topology.schema, 'scctools.matlab.seeman.v1')
+    error('implement_topology:InvalidSchema', ...
+        'topology must use scctools.matlab.seeman.v1 schema.');
+end
 ratio = topology.ratio;
 ac = topology.ac;
 ar = topology.ar;
