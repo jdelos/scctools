@@ -1,6 +1,7 @@
 const assert = require('node:assert/strict');
 const fixtures = require('./fixtures.js');
 const { validateRequest } = require('./worker-core.js');
+const fs = require('node:fs');
 
 assert.equal(fixtures.version, 1);
 assert.deepEqual(Object.keys(fixtures.states), ['symbolic', 'numeric']);
@@ -31,4 +32,6 @@ for (const invalid of [
     return true;
   });
 }
+const workerSource = fs.readFileSync(require.resolve('./worker.js'), 'utf8');
+assert.match(workerSource, /locateFile:\s*\(path\)\s*=>\s*`\.\.\/wasm\/\$\{path\}`/);
 console.log('fixture and worker checks passed');

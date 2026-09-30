@@ -16,5 +16,7 @@ int main() {
   assert(singular && std::strstr(singular, "SINGULAR_SYSTEM")); scctools_free(singular);
   char *duplicate = scctools_submit_json("{\"version\":1,\"version\":1,\"architecture\":\"qfa-graph\",\"stages\":2,\"phases\":2,\"capacitors\":2,\"duty\":0.5}");
   assert(duplicate && std::strstr(duplicate, "INVALID_INPUT")); scctools_free(duplicate);
+  char *control = scctools_submit_json("{\"bad\nfield\":1}");
+  assert(control && std::strstr(control, "INVALID_INPUT") && !std::strchr(control, '\n')); scctools_free(control);
   return 0;
 }

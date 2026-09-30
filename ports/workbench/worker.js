@@ -1,7 +1,7 @@
 let wasmModule;
 try {
   importScripts('worker-core.js', '../wasm/scctools.js');
-  wasmModule = ScctoolsModule();
+  wasmModule = ScctoolsModule({ locateFile: (path) => `../wasm/${path}` });
 } catch (error) {
   self.postMessage({ version: 1, type: 'error', error: { code: 'INVALID_INPUT', message: `WASM load failed: ${error.message}` } });
 }
