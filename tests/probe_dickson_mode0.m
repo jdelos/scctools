@@ -8,7 +8,7 @@ report = struct('schema_version','scctools.issue27.mode0.v2', ...
     'runtime',version,'package','symbolic','commit',git_commit(), ...
     'units','incidence entries dimensionless; duties fractions; A and m normalized', ...
     'assumptions','D symbolic; dc_out=true; half_point=false; normal mode means no Mode argument; exact shapes', ...
-    'tolerances','exact symbolic equality; no numeric tolerance', 'cases',[]);
+    'tolerances','exact symbolic equality; no numeric tolerance', 'error_cases',error_cases(), 'cases',[]);
 for n_caps = [2 3]
     c = struct('n_caps',n_caps,'architecture',encode_arch(dickson_arch(n_caps)), ...
         'adapter',empty_result(), ...
@@ -39,31 +39,52 @@ fprintf('%s\n',jsonencode(report));
 end
 
 function r = empty_result()
-r = struct('success',false,'m_ratios',[],'duties',[],'A',[],'error',struct(), ...
-    'provenance','dickson_hybrid_topology(n_caps,sym(''D''),struct(''dc_out'',true,''half_point'',false))');
+r = struct('success',false,'m_ratios',[],'duties',[],'A',[],'graph',[],'tree_indices',[],'cutset',[], ...
+    'branch_metadata',[],'phase_count',[],'ordered_symbols',[],'error',struct(), ...
+    'provenance','generic_switched_capacitor_class(dickson_arch(n_caps),''Duty'',sym(''D''))');
 end
 function r = run_adapter(n)
 r=empty_result();
+r.provenance='dickson_hybrid_topology(n_caps,sym(''D''),struct(''dc_out'',true,''half_point'',false))';
 try
     t=dickson_hybrid_topology(n,sym('D'),struct('dc_out',true,'half_point',false));
     assert(isstruct(t) && isfield(t,'g_top'),'adapter construction failed');
     r.success=true; r.m_ratios=encode_matrix(t.g_top.m_ratios); r.duties=encode_matrix(t.g_top.duty);
-    r.A=cell(1,numel(t.g_top.phase));
-    for p=1:numel(t.g_top.phase), r.A{p}=encode_matrix(t.g_top.phase{p}.get_a_vector()); end
+    r=characterize(t.g_top,r);
 catch e
     r.error=err_struct(e);
 end
 end
 function r = run_direct(n)
 r=empty_result();
+r.provenance='generic_switched_capacitor_class(dickson_arch(n_caps),''Duty'',sym(''D''))';
 try
     t=generic_switched_capacitor_class(dickson_arch(n),'Duty',sym('D'));
     assert(isa(t,'generic_switched_capacitor_class'),'generic construction failed');
     r.success=true; r.m_ratios=encode_matrix(t.m_ratios); r.duties=encode_matrix(t.duty);
-    r.A=cell(1,numel(t.phase));
-    for p=1:numel(t.phase), r.A{p}=encode_matrix(t.phase{p}.get_a_vector()); end
+    r=characterize(t,r);
 catch e
     r.error=err_struct(e);
+end
+end
+function r = characterize(t,r)
+r.phase_count=t.n_phases;
+r.A=cell(1,t.n_phases); r.graph=cell(1,t.n_phases); r.tree_indices=cell(1,t.n_phases); r.cutset=cell(1,t.n_phases); r.branch_metadata=cell(1,t.n_phases);
+for p=1:t.n_phases
+    ph=t.phase{p}; g=ph.get_on_no_sw(); tree=tree_ph_scc(g,t.n_caps,0); q=fun_cutset(g,tree);
+    r.A{p}=encode_matrix(ph.get_a_vector()); r.graph{p}=encode_matrix(g); r.tree_indices{p}=encode_matrix(tree); r.cutset{p}=encode_matrix(q);
+    r.branch_metadata{p}=struct('inc_on_conv_sw',encode_matrix(ph.inc_on_conv_sw),'inc_on_conv',encode_matrix(ph.inc_on_conv),'sw_idxs',encode_matrix(ph.sw_idxs),'n_caps',ph.n_caps,'n_loads',ph.n_loads,'n_on_sw',ph.n_on_sw,'n_off_sw',ph.n_off_sw);
+end
+r.ordered_symbols=ordered_symbols(t);
+end
+function s = ordered_symbols(t)
+s={};
+for p=1:t.n_phases
+    vals={t.phase{p}.inc_on_conv_sw,t.phase{p}.inc_on_conv};
+    for k=1:numel(vals)
+        v=symvar(vals{k});
+        for j=1:numel(v), name=char(v(j)); if ~any(strcmp(s,name)), s{end+1}=name; end, end
+    end
 end
 end
 function x = encode_arch(a)
@@ -71,11 +92,12 @@ x=struct('Acaps',encode_matrix(a.Acaps),'Asw',encode_matrix(a.Asw), ...
     'Asw_act',encode_matrix(a.Asw_act));
 end
 function x = encode_matrix(a)
-% Exact strings, nested row-major values, explicit shape/order metadata.
+% Exact strings, flat row-major values, explicit shape/order metadata.
 x=struct('rows',size(a,1),'cols',size(a,2),'order','row-major','values',{{}});
-x.values=cell(size(a,1),size(a,2));
+x.values=cell(1,numel(a));
+k=0;
 for i=1:size(a,1)
-    for j=1:size(a,2), x.values{i,j}=encode_scalar(a(i,j)); end
+    for j=1:size(a,2), k=k+1; x.values{k}=encode_scalar(a(i,j)); end
 end
 end
 function x = encode_scalar(v)
@@ -103,6 +125,12 @@ try
 catch e
     x.error=err_struct(e);
 end
+end
+function x=error_cases()
+% Public adapter has no documented invalid-architecture or phase-count API.
+x=struct('invalid_architecture',struct('status','not-representable','metadata','No public adapter entry point accepts an arbitrary architecture.'), ...
+    'singular_graph',struct('status','not-representable','metadata','No public adapter entry point exposes singular graph construction.'), ...
+    'more_than_two_phases',struct('status','not-representable','metadata','dickson_hybrid_topology public adapter constructs fixed two-phase architecture; no semantic-changing probe.'));
 end
 function c=git_commit()
 [~,c]=system('git rev-parse HEAD'); c=strtrim(c);
