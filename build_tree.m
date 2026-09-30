@@ -14,10 +14,7 @@ function [ T ] = build_tree( A,initial_edge,excluded_elem)
 %
 
 
-% Only symbolic incidence matrices need variable substitution.  Octave's
-% symbolic package reports constant sym values as non-numeric; calling
-% symvar on those values is incompatible with MATLAB numeric behavior.
-if isa(A,'sym')
+if ~isnumeric(A)
     SymList = symvar(A);
     A = subs(A,SymList,ones(1,length(SymList)));
 end
