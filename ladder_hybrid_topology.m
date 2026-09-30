@@ -118,7 +118,7 @@ topology.r_vars = top.caps;
 topology.eval_r =@(x) subs(topology.r,topology.r_vars,x);
 topology.q_dc = [top.phase{1}.r_vector(end,top.dc_out_cap) top.phase{2}.r_vector(end,top.dc_out_cap)];
 topology.eval_q_dc = @(x)... %Returns a function that evaluates the Output Impedance as function
-     subs(topology.q_dc,topology.r_vars,x); %of flying capacitances 
+     subs(topology.q_dc,topology.r_vars,x); %of flying capacitances
 
 topology.N_outs   = length(topology.ratio);
 topology.N_sw     = top.n_switches;
