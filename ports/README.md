@@ -58,7 +58,7 @@ Tests use exact symbolic comparisons for canonical two-phase Dickson cases.
 From repository root, replace MATLAB path if installed elsewhere:
 
 ```bash
-/opt/Polyspace/R2021a/bin/matlab -batch "addpath(pwd); addpath('tests'); test_dickson_hybrid_boundary; test_dickson_mode0_oracle; test_fun_loop_zero_rows; test_solve_charge_vectors_qo; test_native_scope_characterization; disp('MATLAB_PASS')"
+/opt/Polyspace/R2021a/bin/matlab -batch "addpath(pwd); addpath('tests'); test_dickson_hybrid_boundary; test_dickson_mode0_oracle; test_fun_loop_zero_rows; test_solve_charge_vectors_qo; test_native_scope_characterization; test_generic_qfa_boundary; test_legacy_seeman_boundary; test_compatibility_substitution_order; disp('MATLAB_PASS')"
 ```
 
 Expected final output:
