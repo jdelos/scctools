@@ -40,8 +40,12 @@ native-test:
 	/tmp/test_dickson_arch
 
 native-phase-test:
-	g++ -std=c++17 -Wall -Wextra -Iinclude -I$(SYMENGINE_INCLUDE) test/test_phase.cpp src/dickson_hybrid_topology.cpp src/dickson_arch.cpp src/dickson_matrix.cpp src/phase_conv.cpp src/scc_phase.cpp src/graph_primitives.cpp src/utilities.cpp -L$(SYMENGINE_LIB) -lsymengine -lgmp -o /tmp/test_phase
+	g++ -std=c++17 -Wall -Wextra -Iinclude -I$(SYMENGINE_INCLUDE) test/test_phase.cpp src/dickson_hybrid_topology.cpp src/dickson_arch.cpp src/dickson_matrix.cpp src/phase_conv.cpp src/scc_phase.cpp src/graph_primitives.cpp src/utilities.cpp src/solve_charge_vectors.cpp -L$(SYMENGINE_LIB) -lsymengine -lgmp -o /tmp/test_phase
 	/tmp/test_phase
+
+native-charge-test:
+	g++ -std=c++17 -Wall -Wextra -Iinclude -I$(SYMENGINE_INCLUDE) test/test_solve_charge_vectors.cpp src/solve_charge_vectors.cpp -L$(SYMENGINE_LIB) -lsymengine -lgmp -o /tmp/test_solve_charge_vectors
+	/tmp/test_solve_charge_vectors
 
 native-graph-primitives-test:
 	g++ -std=c++17 -Wall -Wextra -Iinclude -I$(SYMENGINE_INCLUDE) test/test_graph_primitives.cpp src/graph_primitives.cpp -L$(SYMENGINE_LIB) -lsymengine -lgmp -o /tmp/test_graph_primitives

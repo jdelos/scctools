@@ -1,6 +1,7 @@
 #include "dickson_hybrid_topology.h"
 #include "graph_primitives.h"
 #include "utilities.h"
+#include "solve_charge_vectors.h"
 #include <symengine/integer.h>
 #include <symengine/symbol.h>
 #include <symengine/visitor.h>
@@ -46,6 +47,11 @@ Topology dickson_hybrid_topology(int n_caps, const SymEngine::Expression &duty,
         if (top.phase.back().tree.size()==1 && top.phase.back().tree[0]==static_cast<unsigned>(-1)) throw std::runtime_error("dickson_hybrid_topology: singular graph");
         top.phase.back().cutset=fun_cutset(graph,top.phase.back().tree);
     }
+    std::vector<DenseMatrix> cutsets;
+    for (const auto &phase : top.phase) cutsets.push_back(phase.cutset);
+    ChargeSolution charge = solve_charge_vectors(cutsets, n_caps, top.duty, symbols);
+    top.m_ratios = charge.m;
+    for (unsigned p = 0; p < top.phase.size(); ++p) top.phase[p].set_a_vector(charge.a[p]);
     return top;
 }
 

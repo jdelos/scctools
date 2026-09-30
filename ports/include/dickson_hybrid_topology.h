@@ -8,7 +8,7 @@
 #include "scc_phase.h"
 
 struct Topology {
-    SymEngine::DenseMatrix ratio, vc, vr, is;
+    SymEngine::DenseMatrix ratio, vc, vr, is, m_ratios;
     double vo_swing;
     int N_caps, N_sw;
     SymEngine::DenseMatrix duty;
