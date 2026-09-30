@@ -9,16 +9,20 @@ adapters = { ...
     scc11_topology(sym(1)/2)};
 for k = 1:numel(adapters)
     t = adapters{k};
-    c = sym(2:2 + numel(t.var_ssl) - 1);
-    ron = sym(11:11 + numel(t.var_fsl) - 1);
-    cesr = sym(21:21 + numel(t.var_fesr) - 1);
-    assert(all(isAlways(t.eval_ssl(c) == subs(t.f_ssl, t.var_ssl, c)), 'all'));
-    assert(all(isAlways(t.eval_fsl(ron) == subs(t.f_fsl, t.var_fsl, ron)), 'all'));
-    assert(all(isAlways(t.eval_fesr(cesr) == subs(t.f_esr, t.var_fesr, cesr)), 'all'));
-    assert(all(isAlways(t.eval_r(c) == subs(t.r, t.r_vars, c)), 'all'));
-    assert(all(isAlways(t.eval_q_dc(c) == subs(t.q_dc, t.r_vars, c)), 'all'));
-    assert(numel(unique(c)) == numel(c));
-    assert(numel(unique(ron)) == numel(ron));
-    assert(numel(unique(cesr)) == numel(cesr));
+    canonical_c = sym('C', [1 numel(t.var_ssl)]);
+    canonical_ron = sym('Ron', [1 numel(t.var_fsl)]);
+    canonical_cesr = sym('Resr', [1 numel(t.var_fesr)]);
+    c_values = 2:2 + numel(canonical_c) - 1;
+    ron_values = 11:11 + numel(canonical_ron) - 1;
+    cesr_values = 21:21 + numel(canonical_cesr) - 1;
+    assert(isequal(t.var_ssl, canonical_c));
+    assert(isequal(t.var_fsl, canonical_ron));
+    assert(isequal(t.var_fesr, canonical_cesr));
+    assert(isequal(t.r_vars, canonical_c));
+    assert(all(isAlways(t.eval_ssl(c_values) == subs(t.f_ssl, canonical_c, c_values)), 'all'));
+    assert(all(isAlways(t.eval_fsl(ron_values) == subs(t.f_fsl, canonical_ron, ron_values)), 'all'));
+    assert(all(isAlways(t.eval_fesr(cesr_values) == subs(t.f_esr, canonical_cesr, cesr_values)), 'all'));
+    assert(all(isAlways(t.eval_r(c_values) == subs(t.r, canonical_c, c_values)), 'all'));
+    assert(all(isAlways(t.eval_q_dc(c_values) == subs(t.q_dc, canonical_c, c_values)), 'all'));
 end
 end

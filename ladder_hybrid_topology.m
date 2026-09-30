@@ -29,7 +29,7 @@ end
 
 
 if (nargin == 1) || isempty(duty) 
-    duty = sym(1)/2;
+    duty = 0.5;
 end
 
 

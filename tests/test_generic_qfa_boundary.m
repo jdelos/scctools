@@ -11,7 +11,7 @@ arch3 = dickson_arch(3);
 defaults = hybrid_topology(arch2);
 explicit = hybrid_topology(arch2, sym(1)/2, struct('dc_out', true));
 assert(strcmp(defaults.schema, fixture.legacy_schema));
-assert(isequal(defaults.duty, sym(1)/2));
+assert(isequal(defaults.duty, 0.5));
 assert(isequal(defaults.N_outs, explicit.N_outs));
 assert(isequal(defaults.ratio, explicit.ratio));
 assert(all(isfield(defaults, {'ratio','vc','vr','is','Y_ssl','Y_fsl','f_ssl', ...

@@ -548,7 +548,7 @@ classdef generic_switched_capacitor_class < handle
         %
         
             %Check Symbolic duty-cycle
-            if isa(obj.duty,'sym')
+            if isa(obj.duty,'sym') && ~isempty(symvar(obj.duty))
                 error('Parameters parser:','Duty cycle is a symbolic vairable')
             end
             
@@ -582,7 +582,7 @@ classdef generic_switched_capacitor_class < handle
         %
         
             %Check Symbolic duty-cycle
-            if isa(obj.duty,'sym')
+            if isa(obj.duty,'sym') && ~isempty(symvar(obj.duty))
                 error('Parameters parser:','Duty cycle is a symbolic vairable')
             end
                        
@@ -623,7 +623,7 @@ classdef generic_switched_capacitor_class < handle
         %
         
             %Check Symbolic duty-cycle
-            if isa(obj.duty,'sym')
+            if isa(obj.duty,'sym') && ~isempty(symvar(obj.duty))
                 error('Parameters parser:','Duty cycle is a symbolic vairable')
             end
             
@@ -664,7 +664,7 @@ classdef generic_switched_capacitor_class < handle
         %
         
             %Check Symbolic duty-cycle
-            if isa(obj.duty,'sym')
+            if isa(obj.duty,'sym') && ~isempty(symvar(obj.duty))
                 error('Parameters parser:','Duty cycle is a symbolic vairable')
             end
             

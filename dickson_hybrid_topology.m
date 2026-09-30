@@ -26,7 +26,7 @@ if nargin < 1 || isempty(n_caps) || ~isscalar(n_caps) || n_caps < 2 || n_caps ~=
         'n_caps must be an integer greater than or equal to 2.');
 end
 if nargin < 2 || isempty(duty)
-    duty = sym(1)/2;
+    duty = 0.5;
 end
 if nargin < 3 || isempty(opt)
     opt = struct();

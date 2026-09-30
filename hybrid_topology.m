@@ -20,7 +20,7 @@ if nargin < 1 || ~isstruct(Arch)
         'Arch must be architecture structure from dickson_arch or legacy generator.');
 end
 if nargin < 2 || isempty(duty)
-    duty = sym(1)/2;
+    duty = 0.5;
 end
 if nargin < 3 || isempty(opt)
     opt = struct();
