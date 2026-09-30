@@ -18,16 +18,19 @@ for (const state of Object.values(fixtures.states)) {
   assert.equal(state.parameters.stages, 2);
   assert.equal(state.parameters.phases, 2);
 }
-assert.deepEqual(handleRequest({ fixture: 'numeric', stages: '2', phases: '2' }, fixtures).state, fixtures.states.numeric);
+const result = handleRequest({ version: 1, architecture: 'qfa-graph', fixture: 'numeric', stages: '2', phases: '2' }, fixtures);
+assert.deepEqual(result.state, fixtures.states.numeric);
+assert.equal(result.type, 'result');
+assert.ok(result.A && result.m && result.metadata && result.ordering);
 for (const request of [
-  { fixture: 'missing', stages: 2, phases: 2 },
-  { fixture: 'numeric', stages: 3, phases: 2 },
-  { fixture: 'numeric', stages: 'nope', phases: 2 },
-  { fixture: 'numeric', stages: 2, phases: 1 }
+  { version: 1, architecture: 'qfa-graph', fixture: 'missing', stages: 2, phases: 2 },
+  { version: 1, architecture: 'qfa-graph', fixture: 'numeric', stages: 3, phases: 2 },
+  { version: 1, architecture: 'qfa-graph', fixture: 'numeric', stages: 'nope', phases: 2 },
+  { version: 1, architecture: 'qfa-graph', fixture: 'numeric', stages: 2, phases: 1 }
 ]) {
   const response = handleRequest(request, fixtures);
   assert.equal(response.type, 'error');
-  assert.equal(response.error.code, 'INVALID_INPUT');
+  assert.equal(response.error.code, request.phases === 1 ? 'UNSUPPORTED_PHASE_COUNT' : 'INVALID_INPUT');
   assert.ok(response.error.message);
 }
 console.log('fixture and worker checks passed');
