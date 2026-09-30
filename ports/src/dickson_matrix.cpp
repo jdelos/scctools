@@ -17,7 +17,7 @@ void dickson_matrix(int n_stages, bool in_cap,
 
     int j = 0;
     for (int i = 0; i < n_stages; ++i) {
-        if ((n_stages - i) < 3) {
+        if (n_stages - (i + 1) < 3) {
             A_caps[i][i] = 1;
             if (i < n_stages - 1) {
                 A_caps[n_stages + 1 - j][i] = -1;
@@ -47,17 +47,20 @@ void dickson_matrix(int n_stages, bool in_cap,
     }
 
     if (n_stages > 2) {
-        if (n_stages % 2 == 1) {
-            A_sw1[n_stages + 3 - 3][n_sw1 - 2] = 0;
-            A_sw1[n_stages + 3 - 2][n_sw1 - 2] = 1;
-            A_sw1[n_stages + 3 - 1][n_sw1 - 1] = 0;
-            A_sw1[n_stages + 3 - 2][n_sw1 - 1] = -1;
-        } else {
-            A_sw2[n_stages + 3 - 3][n_sw2 - 2] = 0;
-            A_sw2[n_stages + 3 - 2][n_sw2 - 2] = 1;
-            A_sw2[n_stages + 3 - 1][n_sw2 - 1] = 0;
-            A_sw2[n_stages + 3 - 2][n_sw2 - 1] = -1;
-        }
+        auto &special = (n_stages % 2 == 1) ? A_sw1 : A_sw2;
+        const size_t row = special.size() - 3;
+        const size_t col = special[0].size() - 2;
+        for (size_t r = row; r < special.size(); ++r)
+            for (size_t c = col; c < special[0].size(); ++c)
+                special[r][c] = 0;
+        special[row][col + 1] = 1;
+        special[row + 1][col] = 1;
+        special[row + 2][col + 1] = -1;
+    } else {
+        A_sw1.pop_back();
+        A_sw2.pop_back();
+        A_sw1.back().back() = -1;
+        A_caps.erase(A_caps.end() - 2);
     }
 
     if (in_cap) {

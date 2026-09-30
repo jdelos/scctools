@@ -20,50 +20,40 @@ function [ topology ] = dickson_hybrid_topology(n_caps,duty,opt)
 %   May be freely used and modified but never sold.  The original author
 %   must be cited in all derivative work.
 
+% Apply defaults before reading optional fields. Supports one- and two-argument calls.
+if nargin < 1 || isempty(n_caps) || ~isscalar(n_caps) || n_caps < 2 || n_caps ~= floor(n_caps)
+    error('dickson_hybrid_topology:InvalidNCaps', ...
+        'n_caps must be an integer greater than or equal to 2.');
+end
+if nargin < 2 || isempty(duty)
+    duty = 0.5;
+end
+if nargin < 3 || isempty(opt)
+    opt = struct();
+end
+
 if isfield(opt,'dc_out')
     dc_out = opt.dc_out;
 else
-   dc_out = 1;  
+    dc_out = 1;
 end
 
 if isfield(opt,'half_point')
     half_point = opt.half_point;
 else
-    half_point = 0;  
+    half_point = false;
 end
 
-
-if (nargin == 1) || isempty(duty) 
-    duty = 0.5;
+% Issue #27 covers normal Dickson topology only. Reject unsupported mode
+% before any mode-specific matrices could be referenced.
+if half_point
+    error('dickson_hybrid_topology:HalfPointUnsupported', ...
+        'half_point=true is unsupported in issue #27; use half_point=false.');
 end
 
 %% Generate the incidence matrixs
 %[A_caps, A_sw1, A_sw2] = dickson_matrix(n_caps,0);
  ArchDef  = dickson_arch(n_caps);
-
-%% Add half point conversion
-if half_point 
-   %Generate half point converter
-   A_cap_hp = [0 1 -1 0]';
-   A_sw1_hp = [1 0; -1 0; 0 1; 0 -1] ;
-   A_sw2_hp = [1 0; 0 1; -1 0; 0 -1];
-   
-   %Rearrange Dickson matrices
-   %Remove Vcc node
-   A_caps(1,:) = []; 
-   A_sw1(1,:)  = [];  
-   A_sw2(1,:)  = []; 
-   
-   %Remove top swithc is the first swhitch of phase1
-
-   A_sw1(:,1)  = [];   
-   A_sw1(:,1)  = [];  
-   
-
-   A_caps = append_mA(A_cap_hp,A_caps);
-   A_sw1  = append_mA(A_sw1_hp,A_sw1);
-   A_sw2  = append_mA(A_sw2_hp,A_sw2);
-end
 
 %% Create class 
 top =  generic_switched_capacitor_class(ArchDef,'Duty',duty);
