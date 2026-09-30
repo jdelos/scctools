@@ -2,6 +2,7 @@
 #include <symengine/integer.h>
 #include <symengine/real_double.h>
 #include <symengine/symbol.h>
+#include <symengine/simplify.h>
 #include <symengine/visitor.h>
 #include <stdexcept>
 
@@ -84,7 +85,7 @@ ChargeSolution solve_charge_vectors(const std::vector<DenseMatrix> &cutsets,
     try {
         if (SymEngine::eq(*SymEngine::det_berkowitz(qx), *SymEngine::integer(0)))
             throw std::runtime_error("singular");
-        SymEngine::fraction_free_LU_solve(qx, rhs, ax);
+        SymEngine::fraction_free_gauss_jordan_solve(qx, rhs, ax);
     } catch (...) {
         throw std::runtime_error("solve_charge_vectors: singular charge system");
     }
@@ -93,10 +94,10 @@ ChargeSolution solve_charge_vectors(const std::vector<DenseMatrix> &cutsets,
     for (unsigned p = 0; p < 2; ++p) {
         DenseMatrix phase = zero_matrix(n_caps + 1, outputs);
         for (unsigned r = 0; r <= n_caps; ++r)
-            for (unsigned c = 0; c < outputs; ++c) phase.set(r, c, ax.get(p * (n_caps + 1) + r, c));
+            for (unsigned c = 0; c < outputs; ++c) phase.set(r, c, SymEngine::expand(SymEngine::simplify(ax.get(p * (n_caps + 1) + r, c))));
         result.a.push_back(phase);
         for (unsigned c = 0; c < outputs; ++c)
-            result.m.set(c, 0, SymEngine::add(result.m.get(c, 0), phase.get(0, c)));
+            result.m.set(c, 0, SymEngine::expand(SymEngine::simplify(SymEngine::add(result.m.get(c, 0), phase.get(0, c)))));
     }
     return result;
 }

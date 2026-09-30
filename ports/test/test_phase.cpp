@@ -69,6 +69,8 @@ int main() {
     assert(t2.ordered_symbols == std::vector<RCP<const SymEngine::Symbol>>{d});
     assert(t3.ordered_symbols == t2.ordered_symbols);
     same(t2.ratio, t2.m_ratios); same(t3.ratio, t3.m_ratios);
+    expect(t2.ratio,3,1,{"D/2 + 1/2","1/2","D/2"});
+    expect(t3.ratio,5,1,{"D/3 + 2/3","2/3 - D/3","1/3","1/3 - D/3","D/3"});
     expect(t2.duty,1,2,{"D","1-D"}); expect(t3.duty,1,2,{"D","1-D"});
 
     DenseMatrix s2p0=M(4,2,{"1","0","-1","0","0","1","0","-1"});
@@ -97,6 +99,10 @@ int main() {
       M(3,9,{"1","0","0","0","0","0","0","0","0","0","1","1","0","1-D","1-D","0","0","0","0","0","-1","1","0","0","1-D","1-D","0"}),
       M(3,9,{"1","0","0","0","0","0","0","0","0","0","1","0","1","1-D","1-D","1-D","1-D","0","0","0","1","-1","0","0","-(1-D)","-(1-D)","0"}), {0,1,2});
     for (const Topology *tp : {&t2,&t3}) { assert(tp->phase.size()==2); for (const auto &p:tp->phase) assert(p.symbols.size()==1 && p.symbols[0]==d); }
+        expect(t2.phase[0].get_a_vector(),3,3,{"D/2 + 1/2","1/2","D/2","1/2 - D/2","1/2","D/2","1/2 - D/2","1/2 - D","-D/2"});
+    expect(t2.phase[1].get_a_vector(),3,3,{"0","0","0","D/2 - 1/2","-1/2","-D/2","D/2 - 1/2","D - 1/2","D/2"});
+    expect(t3.phase[0].get_a_vector(),4,5,{"D/3 + 2/3","2/3 - D/3","1/3","1/3 - D/3","D/3","2/3 - (2*D)/3","2/3 - D/3","1/3","1/3 - D/3","D/3","1/3 - D/3","1/3 - (2*D)/3","-1/3","D/3 - 1/3","-D/3","1/3 - D/3","1/3 - (2*D)/3","2/3 - D","2/3 - (2*D)/3","-D/3"});
+    expect(t3.phase[1].get_a_vector(),4,5,{"0","0","0","0","0","(2*D)/3 - 2/3","D/3 - 2/3","-1/3","D/3 - 1/3","-D/3","D/3 - 1/3","(2*D)/3 - 1/3","1/3","1/3 - D/3","D/3","D/3 - 1/3","(2*D)/3 - 1/3","D - 2/3","(2*D)/3 - 2/3","D/3"});
     expect_loads(t2.phase[0], "D"); expect_loads(t2.phase[1], "1-D");
     expect_loads(t3.phase[0], "D"); expect_loads(t3.phase[1], "1-D");
 
