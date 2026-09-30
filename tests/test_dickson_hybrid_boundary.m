@@ -13,12 +13,15 @@ assert(isequal(t_two_arg.duty, 0.5));
 t_no_dc = dickson_hybrid_topology(2, sym(1)/2, struct('dc_out', false, 'half_point', false));
 assert(isstruct(t_no_dc) && isfield(t_no_dc, 'ratio'));
 
-% Representable invalid architecture argument fails with stable identifier.
-try
-    dickson_hybrid_topology(0);
-    error('test_dickson_hybrid_boundary:ExpectedFailure', 'n_caps=0 was accepted');
-catch e
-    assert(strcmp(e.identifier, 'dickson_hybrid_topology:InvalidNCaps'));
+% Invalid architecture arguments fail with stable identifier.
+for n_caps = [0 1 2.5]
+    try
+        dickson_hybrid_topology(n_caps);
+        error('test_dickson_hybrid_boundary:ExpectedFailure', ...
+            'Invalid n_caps=%g was accepted', n_caps);
+    catch e
+        assert(strcmp(e.identifier, 'dickson_hybrid_topology:InvalidNCaps'));
+    end
 end
 
 % Unsupported half-point mode fails before undefined matrices are referenced.

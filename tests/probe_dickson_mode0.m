@@ -128,10 +128,10 @@ catch e
 end
 end
 function x=error_cases()
-% Public adapter has no documented invalid-architecture or phase-count API.
-x=struct('invalid_architecture',struct('status','not-representable','metadata','No public adapter entry point accepts an arbitrary architecture.'), ...
-    'singular_graph',struct('status','not-representable','metadata','No public adapter entry point exposes singular graph construction.'), ...
-    'more_than_two_phases',struct('status','not-representable','metadata','dickson_hybrid_topology public adapter constructs fixed two-phase architecture; no semantic-changing probe.'));
+% Native characterization owns unsupported/singular cases; adapter stays two-phase.
+x=struct('invalid_architecture',struct('status','scope-owned','metadata','dickson_hybrid_topology validates n_caps at adapter boundary with identifier dickson_hybrid_topology:InvalidNCaps.'), ...
+    'singular_graph',struct('status','scope-owned','metadata','solve_charge_vectors accepts native singular systems and returns native solve output; characterization test records rank-deficient input.'), ...
+    'more_than_two_phases',struct('status','scope-owned','metadata','generic_switched_capacitor_class is native multiphase seam; characterization test records phase count >2. dickson_hybrid_topology remains explicit two-phase adapter.'));
 end
 function c=git_commit()
 % Resolve repository from this probe, not caller current directory.

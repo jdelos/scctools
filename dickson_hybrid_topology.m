@@ -21,9 +21,9 @@ function [ topology ] = dickson_hybrid_topology(n_caps,duty,opt)
 %   must be cited in all derivative work.
 
 % Apply defaults before reading optional fields. Supports one- and two-argument calls.
-if nargin < 1 || isempty(n_caps) || ~isscalar(n_caps) || n_caps < 1 || n_caps ~= floor(n_caps)
+if nargin < 1 || isempty(n_caps) || ~isscalar(n_caps) || n_caps < 2 || n_caps ~= floor(n_caps)
     error('dickson_hybrid_topology:InvalidNCaps', ...
-        'n_caps must be a positive integer.');
+        'n_caps must be an integer greater than or equal to 2.');
 end
 if nargin < 2 || isempty(duty)
     duty = 0.5;
@@ -54,30 +54,6 @@ end
 %% Generate the incidence matrixs
 %[A_caps, A_sw1, A_sw2] = dickson_matrix(n_caps,0);
  ArchDef  = dickson_arch(n_caps);
-
-%% Add half point conversion
-if half_point 
-   %Generate half point converter
-   A_cap_hp = [0 1 -1 0]';
-   A_sw1_hp = [1 0; -1 0; 0 1; 0 -1] ;
-   A_sw2_hp = [1 0; 0 1; -1 0; 0 -1];
-   
-   %Rearrange Dickson matrices
-   %Remove Vcc node
-   A_caps(1,:) = []; 
-   A_sw1(1,:)  = [];  
-   A_sw2(1,:)  = []; 
-   
-   %Remove top swithc is the first swhitch of phase1
-
-   A_sw1(:,1)  = [];   
-   A_sw1(:,1)  = [];  
-   
-
-   A_caps = append_mA(A_cap_hp,A_caps);
-   A_sw1  = append_mA(A_sw1_hp,A_sw1);
-   A_sw2  = append_mA(A_sw2_hp,A_sw2);
-end
 
 %% Create class 
 top =  generic_switched_capacitor_class(ArchDef,'Duty',duty);
