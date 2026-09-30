@@ -7,8 +7,11 @@ function [ Bf T ] = fun_loop(A,T)
 %  julia.delos@philps.com
 %
     
-%Remove  zero rows
-A(all(A==0,2),:)=[];
+%Remove zero rows. Octave symbolic cannot delete rows with logical indexing.
+zero_rows = find(logical(all(A == 0, 2)));
+for k = numel(zero_rows):-1:1
+    A(zero_rows(k), :) = [];
+end
 
 if nargin<2
 %find a tree of the matrix
