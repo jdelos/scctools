@@ -15,15 +15,23 @@ function [ topology ] = hybrid_topology(Arch,duty,opt)
 %   May be freely used and modified but never sold.  The original author
 %   must be cited in all derivative work.
 
-if isfield('dc_out',opt)
+if nargin < 1 || ~isstruct(Arch)
+    error('hybrid_topology:InvalidArchitecture', ...
+        'Arch must be architecture structure from dickson_arch or legacy generator.');
+end
+if nargin < 2 || isempty(duty)
+    duty = 0.5;
+end
+if nargin < 3 || isempty(opt)
+    opt = struct();
+end
+if ~isstruct(opt) || ~isscalar(opt)
+    error('hybrid_topology:InvalidOptions', 'opt must be scalar options structure.');
+end
+if isfield(opt,'dc_out')
     dc_out = opt.dc_out;
 else
-    dc_out = 1;
-end
-
-
-if (nargin == 1) || isempty(duty) 
-    duty = 0.5;
+    dc_out = true;
 end
 
 %% Create class 
@@ -34,10 +42,10 @@ top =  generic_switched_capacitor_class(Arch,'Duty',duty);
 OutNodes = 1:top.n_outs;
 
 if ~dc_out
-    if n_caps > 2
+    if top.n_caps > 2
         OutNodes([top.dc_out_cap end])=[];
     else
-        OutNodes([top.dc_out_cap])=[];
+        OutNodes(top.dc_out_cap)=[];
     end
 end
 
