@@ -6,6 +6,7 @@ addpath(fileparts(fileparts(mfilename('fullpath'))));
 report = struct('schema_version','scctools.issue27.mode0.v2', ...
     'serializer_version','ordered-string-matrix.v1', ...
     'runtime',version,'package','symbolic','commit',git_commit(), ...
+    'fixture_provenance','source commit captured from repository worktree; oracle base commit stored in fixture', ...
     'units','incidence entries dimensionless; duties fractions; A and m normalized', ...
     'assumptions','D symbolic; dc_out=true; half_point=false; normal mode means no Mode argument; exact shapes', ...
     'tolerances','exact symbolic equality; no numeric tolerance', 'error_cases',error_cases(), 'cases',[]);
@@ -133,5 +134,11 @@ x=struct('invalid_architecture',struct('status','not-representable','metadata','
     'more_than_two_phases',struct('status','not-representable','metadata','dickson_hybrid_topology public adapter constructs fixed two-phase architecture; no semantic-changing probe.'));
 end
 function c=git_commit()
-[~,c]=system('git rev-parse HEAD'); c=strtrim(c);
+% Resolve repository from this probe, not caller current directory.
+probe_dir=fileparts(mfilename('fullpath'));
+[status,c]=system(sprintf('git -C "%s" rev-parse HEAD',probe_dir));
+c=strtrim(c);
+if status ~= 0 || isempty(regexp(c,'^[0-9a-f]{40}$','once'))
+    error('probe:GitCommitUnavailable','Could not resolve full source commit from probe worktree.');
+end
 end

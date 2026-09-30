@@ -20,21 +20,35 @@ function [ topology ] = dickson_hybrid_topology(n_caps,duty,opt)
 %   May be freely used and modified but never sold.  The original author
 %   must be cited in all derivative work.
 
+% Apply defaults before reading optional fields. Supports one- and two-argument calls.
+if nargin < 1 || isempty(n_caps) || ~isscalar(n_caps) || n_caps < 1 || n_caps ~= floor(n_caps)
+    error('dickson_hybrid_topology:InvalidNCaps', ...
+        'n_caps must be a positive integer.');
+end
+if nargin < 2 || isempty(duty)
+    duty = 0.5;
+end
+if nargin < 3 || isempty(opt)
+    opt = struct();
+end
+
 if isfield(opt,'dc_out')
     dc_out = opt.dc_out;
 else
-   dc_out = 1;  
+    dc_out = 1;
 end
 
 if isfield(opt,'half_point')
     half_point = opt.half_point;
 else
-    half_point = 0;  
+    half_point = false;
 end
 
-
-if (nargin == 1) || isempty(duty) 
-    duty = 0.5;
+% Issue #27 covers normal Dickson topology only. Reject unsupported mode
+% before any mode-specific matrices could be referenced.
+if half_point
+    error('dickson_hybrid_topology:HalfPointUnsupported', ...
+        'half_point=true is unsupported in issue #27; use half_point=false.');
 end
 
 %% Generate the incidence matrixs

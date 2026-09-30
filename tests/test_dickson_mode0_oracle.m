@@ -7,6 +7,10 @@ actual = probe_dickson_mode0();
 assert(strcmp(actual.schema_version,'scctools.issue27.mode0.v2'));
 assert(strcmp(actual.serializer_version,'ordered-string-matrix.v1'));
 assert(~isempty(actual.commit) && ~isempty(regexp(actual.commit,'^[0-9a-f]{40}$','once')));
+assert(isfield(actual,'fixture_provenance') && ...
+    strcmp(actual.fixture_provenance,'source commit captured from repository worktree; oracle base commit stored in fixture'));
+assert(isfield(expected,'oracle_base_commit') && ...
+    ~isempty(regexp(expected.oracle_base_commit,'^[0-9a-f]{40}$','once')));
 assert(~isempty(actual.runtime));
 assert(~isempty(regexp(actual.runtime,'R2021a','once')) || ~isempty(regexp(actual.runtime,'^9\\.10\\.', 'once')));
 assert(numel(actual.cases) == 2);
@@ -28,7 +32,7 @@ actual = rmfield(actual,{'runtime','commit'});
 % changing flat row-major values or provenance strings.
 actual = jsondecode(jsonencode(actual));
 expected = jsondecode(jsonencode(expected));
-expected = rmfield(expected,{'runtime','commit'});
+expected = rmfield(expected,{'runtime','commit','oracle_base_commit'});
 assert(isequal(actual,expected),'Generated report differs from checked-in oracle');
 end
 function assert_serialized_architecture(a)
