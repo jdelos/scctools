@@ -1,9 +1,11 @@
 # Native production build. Override SYMENGINE_INCLUDE and SYMENGINE_LIB for other installs.
 CXX ?= g++
 CXXFLAGS ?= -std=c++17 -O0 -Wall -Wextra -g3
+CXXFLAGS += $(SYMENGINE_VERSION_CHECK)
 SYMENGINE_INCLUDE ?= /usr/local/include
 SYMENGINE_LIB ?= /usr/local/lib
 INCLUDES = -Iinclude -I$(SYMENGINE_INCLUDE)
+SYMENGINE_VERSION_CHECK = -include include/symengine_version_check.h
 LDFLAGS = -L$(SYMENGINE_LIB) -lsymengine -lgmp -lmpfr
 
 TARGET = scctools
@@ -13,9 +15,15 @@ SRC_FILES = $(wildcard $(SRC_DIR)/*.cpp) main.cpp
 OBJ_FILES = $(patsubst %.cpp, $(OBJ_DIR)/%.o, $(notdir $(SRC_FILES)))
 TEST_SRC_DICKSON_MATRIX ?= test/test_dickson_matrix.cpp
 
-.PHONY: all native-test native-phase-test native-charge-test native-graph-primitives-test native-matrix-test test_dickson_matrix clean FORCE
+.PHONY: all native-test native-phase-test native-charge-test native-graph-primitives-test native-matrix-test native-boundary-test wasm-test wasm-build test_dickson_matrix clean FORCE
 
 all: $(TARGET)
+
+wasm-build:
+	./wasm/build.sh
+
+wasm-test: wasm-build
+	node test/test_wasm.js
 
 native-test:
 	$(CXX) $(CXXFLAGS) $(INCLUDES) test/test_dickson_arch.cpp src/dickson_arch.cpp src/dickson_matrix.cpp -L$(SYMENGINE_LIB) -lsymengine -lgmp -o /tmp/test_dickson_arch
@@ -36,6 +44,10 @@ native-graph-primitives-test:
 native-matrix-test:
 	$(CXX) $(CXXFLAGS) $(INCLUDES) $(TEST_SRC_DICKSON_MATRIX) src/dickson_matrix.cpp -o /tmp/test_dickson_matrix
 	/tmp/test_dickson_matrix
+
+native-boundary-test:
+	$(CXX) $(CXXFLAGS) $(INCLUDES) test/test_native_boundary.cpp src/native_boundary.cpp src/dickson_hybrid_topology.cpp src/dickson_arch.cpp src/dickson_matrix.cpp src/phase_conv.cpp src/scc_phase.cpp src/graph_primitives.cpp src/utilities.cpp src/solve_charge_vectors.cpp -L$(SYMENGINE_LIB) -lsymengine -lgmp -o /tmp/test_native_boundary
+	/tmp/test_native_boundary
 
 test_dickson_matrix: native-matrix-test
 

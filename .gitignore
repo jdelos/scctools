@@ -9,5 +9,6 @@
 /ports/wasm/*.js
 /ports/wasm/*.wasm
 /ports/wasm/*.map
+/ports/wasm/.cache/
 
 
