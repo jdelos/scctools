@@ -34,10 +34,6 @@ native-test:
 	g++ -std=c++17 -Wall -Wextra -Iinclude test/test_dickson_arch.cpp src/dickson_arch.cpp src/dickson_matrix.cpp -lsymengine -lgmp -o /tmp/test_dickson_arch
 	/tmp/test_dickson_arch
 
-native-graph-test:
-	g++ -std=c++17 -Wall -Wextra -Iinclude test/test_native_graph.cpp src/native_graph.cpp -lsymengine -lgmp -o /tmp/test_native_graph
-	/tmp/test_native_graph
-
 # Compile source files
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp | $(OBJ_DIR)
 	$(EMCC) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
