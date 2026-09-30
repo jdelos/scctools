@@ -26,7 +26,7 @@ extern "C" char *scctools_submit_json(const char *request_json) {
         if (match[1] != "1" || match[2] != "qfa-graph" || match[3] != "2") return reply(error("INVALID_INPUT","invalid architecture or stages"));
         if (match[4] != "2") return reply(error("UNSUPPORTED_PHASE_COUNT","only two phases supported"));
         int caps = std::stoi(match[5]);
-        if (caps < 1 || caps > 3) return reply(error("INVALID_INPUT","capacitors must be 1, 2, or 3"));
+        if (caps < 2 || caps > 3) return reply(error("INVALID_INPUT","capacitors must be 2 or 3"));
         double duty = std::stod(match[6]);
         Topology t = dickson_hybrid_topology(caps, duty, true, false);
         std::ostringstream out;
