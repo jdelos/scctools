@@ -2,9 +2,11 @@
 EMCC = emcc
 CXXFLAGS = -std=c++17 -O0 -Wall -Wextra -g3 -s WASM=1 -s ALLOW_MEMORY_GROWTH=1
 
-# Include and Library Paths
+# Include and Library Paths. Keep SymEngine headers and library from same install.
+SYMENGINE_INCLUDE = /usr/local/include
+SYMENGINE_LIB = /usr/local/lib
 INCLUDES = -Iinclude \
-           -I/usr/local/include \
+           -I$(SYMENGINE_INCLUDE) \
            -I./libs/mpfr-4.2.1/install/include \
            -I./libs/gmp-6.2.1/install/include
 
@@ -31,8 +33,12 @@ OBJ_FILES = $(patsubst %.cpp, $(OBJ_DIR)/%.o, $(notdir $(SRC_FILES)))
 all: $(TARGET)
 
 native-test:
-	g++ -std=c++17 -Wall -Wextra -Iinclude test/test_dickson_arch.cpp src/dickson_arch.cpp src/dickson_matrix.cpp -lsymengine -lgmp -o /tmp/test_dickson_arch
+	g++ -std=c++17 -Wall -Wextra -Iinclude -I$(SYMENGINE_INCLUDE) test/test_dickson_arch.cpp src/dickson_arch.cpp src/dickson_matrix.cpp -L$(SYMENGINE_LIB) -lsymengine -lgmp -o /tmp/test_dickson_arch
 	/tmp/test_dickson_arch
+
+native-graph-primitives-test:
+	g++ -std=c++17 -Wall -Wextra -Iinclude -I$(SYMENGINE_INCLUDE) test/test_graph_primitives.cpp src/graph_primitives.cpp -L$(SYMENGINE_LIB) -lsymengine -lgmp -o /tmp/test_graph_primitives
+	/tmp/test_graph_primitives
 
 # Compile source files
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp | $(OBJ_DIR)
