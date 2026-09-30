@@ -39,11 +39,22 @@ static void expect_phase(const SCCPhase &p, unsigned n_caps, unsigned loads,
                          std::initializer_list<unsigned> indexes,
                          unsigned on, unsigned off, const DenseMatrix &sw,
                          const DenseMatrix &conv_sw, const DenseMatrix &conv,
-                         const DenseMatrix &graph, const DenseMatrix &cutset) {
+                         const DenseMatrix &graph, const DenseMatrix &cutset,
+                         std::initializer_list<unsigned> tree) {
     assert(p.n_caps == n_caps && p.n_loads == loads && p.n_on_sw == on && p.n_off_sw == off);
     assert(p.sw_idxs == std::vector<unsigned>(indexes));
+    assert(p.tree == std::vector<unsigned>(tree));
     same(p.inc_on_sw, sw); same(p.inc_on_conv_sw, conv_sw); same(p.inc_on_conv, conv);
     same(p.graph, graph); same(p.cutset, cutset);
+}
+static DenseMatrix substituted(const DenseMatrix &in, const RCP<const SymEngine::Symbol> &symbol,
+                               const RCP<const Basic> &value) {
+    DenseMatrix out(in.nrows(), in.ncols());
+    SymEngine::map_basic_basic map{{symbol, value}};
+    for (unsigned r = 0; r < in.nrows(); ++r)
+        for (unsigned c = 0; c < in.ncols(); ++c)
+            out.set(r, c, in.get(r, c)->subs(map));
+    return out;
 }
 static void rejected(int n, const Expression &d, std::vector<RCP<const SymEngine::Symbol>> s,
                      bool dc, bool half) {
@@ -65,17 +76,26 @@ int main() {
       M(4,8,{"1","0","0","1","0","0","0","0","0","1","0","-1","0","D","0","0","0","0","1","0","1","0","D","0","0","-1","0","0","-1","0","0","D"}),
       M(2,8,{"1","1","0","D","0","0","1","0","0","-1","1","0","D","D","-1","1"}),
       M(2,6,{"1","1","0","D","0","0","0","-1","1","0","D","D"}),
-      M(2,6,{"1","0","1","D","D","D","0","1","-1","0","-D","-D"}));
+      M(2,6,{"1","0","1","D","D","D","0","1","-1","0","-D","-D"}), {0,1});
     expect_phase(t2.phase[1],2,3,{2,4},2,2,s2p1,
       M(4,8,{"1","0","0","0","0","0","0","0","0","1","0","1","0","1-D","0","0","0","0","1","-1","0","0","1-D","0","0","-1","0","0","1","0","0","1-D"}),
       M(2,8,{"1","0","0","0","0","0","1","0","0","1","1","1-D","1-D","0","-1","1"}),
       M(2,6,{"1","0","0","0","0","0","0","1","1","1-D","1-D","0"}),
-      M(2,6,{"1","0","0","0","0","0","0","1","1","1-D","1-D","0"}));
+      M(2,6,{"1","0","0","0","0","0","0","1","1","1-D","1-D","0"}), {0,1});
 
-    assert(t3.phase[0].sw_idxs == std::vector<unsigned>({1,3,5,7}));
-    assert(t3.phase[1].sw_idxs == std::vector<unsigned>({2,4,6}));
-    assert(t3.phase[0].graph.ncols() == 9 && t3.phase[1].graph.ncols() == 9);
-    for (const Topology *tp : {&t2,&t3}) { assert(tp->phase.size()==2); for (const auto &p:tp->phase) { assert(p.tree.size()==p.graph.nrows()); assert(p.symbols.size()==1 && p.symbols[0]==d); } }
+    expect_phase(t3.phase[0],3,5,{1,3,5,7},4,3,
+      M(6,4,{"1","0","0","0","-1","0","0","0","0","1","0","0","0","-1","0","1","0","0","1","0","0","0","0","-1"}),
+      M(6,13,{"1","0","0","0","1","0","0","0","0","0","0","0","0","0","1","0","0","-1","0","0","0","D","0","0","0","0","0","0","1","0","0","1","0","0","0","D","0","0","0","0","0","0","1","0","-1","0","1","0","0","D","0","0","0","0","-1","0","0","0","1","0","0","0","0","D","0","0","-1","0","0","0","0","0","-1","0","0","0","0","D"}),
+      M(2,12,{"1","1","0","0","D","0","0","0","0","1","0","0","0","-1","1","1","0","D","D","0","D","-1","1","1"}),
+      M(2,9,{"1","1","0","0","D","0","0","0","0","0","-1","1","1","0","D","D","0","D"}),
+      M(2,9,{"1","0","1","1","D","D","D","0","D","0","1","-1","-1","0","-D","-D","0","-D"}), {0,1});
+    expect_phase(t3.phase[1],3,5,{2,4,6},3,4,
+      M(6,3,{"0","0","0","1","0","0","-1","0","0","0","1","0","0","-1","0","0","0","1"}),
+      M(6,12,{"1","0","0","0","0","0","0","0","0","0","0","0","0","1","0","0","1","0","0","1-D","0","0","0","0","0","0","1","0","-1","0","0","0","1-D","0","0","0","0","0","0","1","0","1","0","0","0","1-D","0","0","0","0","-1","0","0","-1","0","0","0","0","1-D","0","0","-1","0","0","0","0","1","0","0","0","0","1-D"}),
+      M(3,13,{"1","0","0","0","0","0","0","0","0","1","0","0","0","0","1","1","0","1-D","1-D","0","0","0","-1","1","0","0","0","0","-1","1","0","0","1-D","1-D","0","0","-1","1","1"}),
+      M(3,9,{"1","0","0","0","0","0","0","0","0","0","1","1","0","1-D","1-D","0","0","0","0","0","-1","1","0","0","1-D","1-D","0"}),
+      M(3,9,{"1","0","0","0","0","0","0","0","0","0","1","0","1","1-D","1-D","1-D","1-D","0","0","0","1","-1","0","0","-(1-D)","-(1-D)","0"}), {0,1,2});
+    for (const Topology *tp : {&t2,&t3}) { assert(tp->phase.size()==2); for (const auto &p:tp->phase) assert(p.symbols.size()==1 && p.symbols[0]==d); }
     expect_loads(t2.phase[0], "D"); expect_loads(t2.phase[1], "1-D");
     expect_loads(t3.phase[0], "D"); expect_loads(t3.phase[1], "1-D");
 
@@ -83,11 +103,16 @@ int main() {
     assert(n.ordered_symbols.empty());
     assert(SymEngine::eq(*n.duty.get(0, 0), *SymEngine::real_double(.25)));
     assert(SymEngine::eq(*n.duty.get(0, 1), *SymEngine::real_double(.75)));
+    auto quarter = SymEngine::real_double(.25);
     for(unsigned p=0;p<2;++p) {
-        assert(n.phase[p].graph.nrows() == t3.phase[p].graph.nrows());
-        assert(n.phase[p].graph.ncols() == t3.phase[p].graph.ncols());
-        assert(n.phase[p].cutset.nrows() == t3.phase[p].cutset.nrows());
-        assert(n.phase[p].cutset.ncols() == t3.phase[p].cutset.ncols());
+        const auto &s = t3.phase[p]; const auto &q = n.phase[p];
+        same(q.inc_on_sw, substituted(s.inc_on_sw, d, quarter));
+        same(q.inc_on_conv_sw, substituted(s.inc_on_conv_sw, d, quarter));
+        same(q.inc_on_conv, substituted(s.inc_on_conv, d, quarter));
+        same(q.graph, substituted(s.graph, d, quarter));
+        same(q.cutset, substituted(s.cutset, d, quarter));
+        assert(q.tree == s.tree && q.sw_idxs == s.sw_idxs);
+        assert(q.symbols.empty());
     }
     expect_loads(n.phase[0], "0.25"); expect_loads(n.phase[1], "0.75");
     rejected(2,D,{d,SymEngine::symbol("E")},true,false);
