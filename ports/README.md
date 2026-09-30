@@ -88,3 +88,34 @@ Run fixture validation:
 ```bash
 node ports/workbench/test-fixtures.js
 ```
+
+## Frequently asked questions
+
+### Do the parity tests run the `ports/scctools` executable?
+
+No. The current parity tests do not run the `ports/scctools` executable.
+
+The native test targets compile separate test programs. These programs link directly to the production C++ source files. They call functions such as `dickson_hybrid_topology` and `solve_charge_vectors`.
+
+For example, `native-phase-test` builds and runs `/tmp/test_phase`:
+
+```text
+ports/test/test_phase.cpp + ports/src/*.cpp -> /tmp/test_phase
+```
+
+The parity check has two parts:
+
+1. MATLAB R2021a generates and checks the reference data in `tests/fixtures/dickson_mode0_matlab_r2021a.json`.
+2. The native C++ tests check the same matrix shapes, matrix entries, order, duties, symbols, charge vectors (`A`), and conversion ratios (`m`).
+
+The native tests contain the expected MATLAB values. They do not read the JSON fixture at run time.
+
+The `ports/scctools` executable is currently a smoke-test program. It uses one fixed five-capacitor case. It prints only this message:
+
+```text
+Topology calculated for 5 capacitors.
+```
+
+Thus, the current tests verify parity at the C++ function boundary. They do not verify parity through the final executable interface.
+
+A future integration must add a machine-readable command-line interface. An end-to-end test can then run `ports/scctools`, read its output, and compare that output with the MATLAB reference data. The browser can use the same interface after the native model is connected.

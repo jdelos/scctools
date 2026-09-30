@@ -3,4 +3,11 @@
 #Temporary file from tex editors
 *~
 
+# Native and WebAssembly build artifacts
+/ports/obj/
+/ports/scctools
+/ports/wasm/*.js
+/ports/wasm/*.wasm
+/ports/wasm/*.map
+
 
