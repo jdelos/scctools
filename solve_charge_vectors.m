@@ -38,13 +38,14 @@ n_phase = length(Q);
 
 %% Create system matrix Qx = [Q_in | Q_c]
 m_size = n_phase*(1+n_caps);
-Qx = zeros(m_size);
 n_outs = size(Q{1},2) - (1+n_caps); %Number of output nodes
 
-if isempty(symvar(duty(1)))
-    Qo = zeros(m_size,n_outs);
-else
+if isa(duty(1),'sym')
+    Qx = sym(zeros(m_size));
     Qo = sym(zeros(m_size,n_outs));
+else
+    Qx = zeros(m_size);
+    Qo = zeros(m_size,n_outs);
 end
 
 %Cut-set matrix first element is the voltage supply, then the capacitors in
