@@ -1,9 +1,12 @@
-let wasmInstance;
-(async () => {
-  try { const response = await fetch('../scctools.wasm'); ({ instance: wasmInstance } = await WebAssembly.instantiate(await response.arrayBuffer(), {})); }
-  catch (error) { self.postMessage({ version: 1, type: 'error', error: { code: 'INVALID_INPUT', message: `WASM load failed: ${error.message}` } }); }
-})();
-self.onmessage = ({ data }) => {
-  if (!wasmInstance) return self.postMessage({ version: 1, type: 'error', error: { code: 'INVALID_INPUT', message: 'WASM is not ready.' } });
-  self.postMessage(submitToWasm(data, wasmInstance));
+let wasmModule;
+try {
+  importScripts('worker-core.js', '../wasm/scctools.js');
+  wasmModule = ScctoolsModule();
+} catch (error) {
+  self.postMessage({ version: 1, type: 'error', error: { code: 'INVALID_INPUT', message: `WASM load failed: ${error.message}` } });
+}
+self.onmessage = async ({ data }) => {
+  if (!wasmModule) return self.postMessage({ version: 1, type: 'error', error: { code: 'INVALID_INPUT', message: 'WASM is not ready.' } });
+  try { self.postMessage(submitToWasm(data, await wasmModule)); }
+  catch (error) { self.postMessage({ version: 1, type: 'error', error: { code: 'INVALID_INPUT', message: error.message } }); }
 };

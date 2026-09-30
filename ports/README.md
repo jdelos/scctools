@@ -10,6 +10,7 @@ C++17/SymEngine port of graph-based quantified charge-flow analysis (QFA). Curre
 - GMP
 - MPFR
 - Python 3, only for serving the browser workbench
+- Docker, for the pinned Emscripten WebAssembly build
 - MATLAB R2021a with Symbolic Math Toolbox, only for MATLAB parity tests
 
 SymEngine headers and library must come from the same installation/version. Defaults expect both under `/usr/local`:
@@ -82,9 +83,15 @@ Open:
 http://127.0.0.1:4173/
 ```
 
-Workbench currently renders checked-in fixtures. It does not run native QFA in browser yet.
+Build the native WebAssembly model and run its Node integration test:
 
-Run fixture validation:
+```bash
+make -C ports wasm-test
+```
+
+The build uses a pinned Emscripten image and checksum-verified GMP 6.2.1 and SymEngine 0.13.0 sources. Generated files and the dependency cache under `ports/wasm/` are ignored.
+
+Run the static request and fixture checks:
 
 ```bash
 node ports/workbench/test-fixtures.js

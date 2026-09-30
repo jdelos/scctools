@@ -13,9 +13,15 @@ SRC_FILES = $(wildcard $(SRC_DIR)/*.cpp) main.cpp
 OBJ_FILES = $(patsubst %.cpp, $(OBJ_DIR)/%.o, $(notdir $(SRC_FILES)))
 TEST_SRC_DICKSON_MATRIX ?= test/test_dickson_matrix.cpp
 
-.PHONY: all native-test native-phase-test native-charge-test native-graph-primitives-test native-matrix-test native-boundary-test test_dickson_matrix clean FORCE
+.PHONY: all native-test native-phase-test native-charge-test native-graph-primitives-test native-matrix-test native-boundary-test wasm-test wasm-build test_dickson_matrix clean FORCE
 
 all: $(TARGET)
+
+wasm-build:
+	./wasm/build.sh
+
+wasm-test: wasm-build
+	node test/test_wasm.js
 
 native-test:
 	$(CXX) $(CXXFLAGS) $(INCLUDES) test/test_dickson_arch.cpp src/dickson_arch.cpp src/dickson_matrix.cpp -L$(SYMENGINE_LIB) -lsymengine -lgmp -o /tmp/test_dickson_arch

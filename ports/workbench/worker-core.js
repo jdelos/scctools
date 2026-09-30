@@ -10,13 +10,19 @@ function submitToWasm(data, wasm) {
   try {
     validateRequest(data);
     const encoded = new TextEncoder().encode(JSON.stringify(data) + '\0');
-    const ptr = wasm.exports.malloc(encoded.length);
-    new Uint8Array(wasm.exports.memory.buffer, ptr, encoded.length).set(encoded);
-    const resultPtr = wasm.exports.scctools_submit_json(ptr);
-    const bytes = new Uint8Array(wasm.exports.memory.buffer);
+    const api = wasm.exports || wasm;
+    const memory = api.memory || { buffer: api.HEAPU8.buffer };
+    const malloc = api.malloc || api._malloc;
+    const free = api.free || api._free;
+    const submit = api.scctools_submit_json || api._scctools_submit_json;
+    const release = api.scctools_free || api._scctools_free;
+    const ptr = malloc(encoded.length);
+    new Uint8Array(memory.buffer, ptr, encoded.length).set(encoded);
+    const resultPtr = submit(ptr);
+    const bytes = new Uint8Array(memory.buffer);
     let end = resultPtr; while (bytes[end]) end += 1;
     const result = JSON.parse(new TextDecoder().decode(bytes.slice(resultPtr, end)));
-    wasm.exports.scctools_free(resultPtr); wasm.exports.free(ptr); return result;
+    release(resultPtr); free(ptr); return result;
   } catch (error) { return { version: 1, type: 'error', error: { code: error.code || 'INVALID_INPUT', message: error.message } }; }
 }
 if (typeof module !== 'undefined') module.exports = { validateRequest, submitToWasm };
