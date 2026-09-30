@@ -6,7 +6,7 @@
 #include <symengine/expression.h>
 
 struct Topology {
-    SymEngine::DenseMatrix A, ratio, m, vc, vr, is;
+    SymEngine::DenseMatrix ratio, vc, vr, is;
     double vo_swing, duty;
     int N_caps, N_sw;
 };
