@@ -1,10 +1,11 @@
 # Compiler and Flags
-EMCC = emcc
-CXXFLAGS = -std=c++17 -O0 -Wall -Wextra -g3 -s WASM=1 -s ALLOW_MEMORY_GROWTH=1
+EMCC ?= emcc
+CXXFLAGS ?= -std=c++17 -O0 -Wall -Wextra -g3 -s WASM=1 -s ALLOW_MEMORY_GROWTH=1
 
 # Include and Library Paths. Keep SymEngine headers and library from same install.
-SYMENGINE_INCLUDE = /usr/local/include
-SYMENGINE_LIB = /usr/local/lib
+# SymEngine 0.13 headers and library must match; override for native/WASM installs.
+SYMENGINE_INCLUDE ?= /usr/local/include
+SYMENGINE_LIB ?= /usr/local/lib
 INCLUDES = -Iinclude \
            -I$(SYMENGINE_INCLUDE) \
            -I./libs/mpfr-4.2.1/install/include \
@@ -17,6 +18,8 @@ LDFLAGS = -L./libs/symengine/build_wasm/symengine/ \
 
 # Output files
 TARGET = test_dickson_matrix
+WASM_DIR ?= wasm
+TEST_SRC_DICKSON_MATRIX ?= test/test_dickson_matrix.cpp
 TEST_TARGET_DICKSON_MATRIX = $(WASM_DIR)/test_dickson_matrix.js
 
 EXPORT_FUNCS = -s EXPORTED_FUNCTIONS="['_main']"

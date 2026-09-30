@@ -2,6 +2,8 @@
 #include <symengine/integer.h>
 #include <symengine/add.h>
 #include <symengine/mul.h>
+#include <symengine/visitor.h>
+#include <symengine/complex.h>
 #include <algorithm>
 #include <functional>
 #include <stdexcept>
@@ -12,6 +14,27 @@ using SymEngine::RCP;
 
 static bool nonzero(const RCP<const Basic> &x) {
     return !SymEngine::eq(*x, *SymEngine::integer(0));
+}
+
+static DenseMatrix topology_view(const DenseMatrix &a) {
+    DenseMatrix out(a.nrows(), a.ncols());
+    for (unsigned r = 0; r < a.nrows(); ++r) {
+        for (unsigned c = 0; c < a.ncols(); ++c) {
+            auto value = a.get(r, c);
+            SymEngine::map_basic_basic replacements;
+            for (const auto &symbol : SymEngine::free_symbols(*value))
+                replacements.emplace(symbol, SymEngine::integer(1));
+            out.set(r, c, replacements.empty() ? value : value->subs(replacements));
+        }
+    }
+    return out;
+}
+
+static void reject_complex(const DenseMatrix &a) {
+    for (unsigned r = 0; r < a.nrows(); ++r)
+        for (unsigned c = 0; c < a.ncols(); ++c)
+            if (SymEngine::is_a<SymEngine::Complex>(*a.get(r, c)))
+                throw std::invalid_argument("build_tree: complex graph entries unsupported; use real incidence values");
 }
 
 static DenseMatrix with_ground(const DenseMatrix &a) {
@@ -47,7 +70,10 @@ std::vector<unsigned> build_tree(const DenseMatrix &incidence, int initial_edge,
         if (e >= incidence.ncols()) throw std::invalid_argument("build_tree: excluded index");
         omit[e] = true;
     }
-    DenseMatrix a = with_ground(incidence);
+    reject_complex(incidence);
+    // Topology decisions use symbols at their neutral nonzero value. Keep
+    // incidence unchanged for callers that later solve symbolic equations.
+    DenseMatrix a = with_ground(topology_view(incidence));
     std::vector<unsigned> columns;
     for (unsigned e = 0; e < incidence.ncols(); ++e) if (!omit[e]) columns.push_back(e);
     unsigned start;
