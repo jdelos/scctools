@@ -1,10 +1,14 @@
 #include "dickson_matrix.h"
 #include <vector>
+#include <stdexcept>
 
 void dickson_matrix(int n_stages, bool in_cap,
                     std::vector<std::vector<int>> &A_caps,
                     std::vector<std::vector<int>> &A_sw1,
                     std::vector<std::vector<int>> &A_sw2) {
+    if (n_stages < 2) {
+        throw std::invalid_argument("invalid architecture: n_stages must be at least 2");
+    }
 
     // Initialize the capacitor incidence matrix
     A_caps.assign(n_stages + 2, std::vector<int>(n_stages, 0));
@@ -58,6 +62,15 @@ void dickson_matrix(int n_stages, bool in_cap,
             A_sw2[n_stages + 3 - 1][n_sw2 - 1] = 0;
             A_sw2[n_stages + 3 - 2][n_sw2 - 1] = -1;
         }
+    }
+
+    // MATLAB oracle removes final rows for its two-capacitor architecture.
+    if (n_stages == 2) {
+        A_sw1.pop_back();
+        A_sw2.pop_back();
+        A_sw1.back().back() = -1;
+        A_sw2.back().back() = -1;
+        A_caps.erase(A_caps.end() - 2);
     }
 
     if (in_cap) {
