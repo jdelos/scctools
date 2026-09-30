@@ -68,6 +68,7 @@ int main() {
     Topology t3 = dickson_hybrid_topology(3,D,{d},true,false);
     assert(t2.ordered_symbols == std::vector<RCP<const SymEngine::Symbol>>{d});
     assert(t3.ordered_symbols == t2.ordered_symbols);
+    same(t2.ratio, t2.m_ratios); same(t3.ratio, t3.m_ratios);
     expect(t2.duty,1,2,{"D","1-D"}); expect(t3.duty,1,2,{"D","1-D"});
 
     DenseMatrix s2p0=M(4,2,{"1","0","-1","0","0","1","0","-1"});

@@ -51,6 +51,7 @@ Topology dickson_hybrid_topology(int n_caps, const SymEngine::Expression &duty,
     for (const auto &phase : top.phase) cutsets.push_back(phase.cutset);
     ChargeSolution charge = solve_charge_vectors(cutsets, n_caps, top.duty, symbols);
     top.m_ratios = charge.m;
+    top.ratio = charge.m;
     for (unsigned p = 0; p < top.phase.size(); ++p) top.phase[p].set_a_vector(charge.a[p]);
     return top;
 }
