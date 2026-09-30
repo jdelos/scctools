@@ -1,9 +1,11 @@
 # Native production build. Override SYMENGINE_INCLUDE and SYMENGINE_LIB for other installs.
 CXX ?= g++
 CXXFLAGS ?= -std=c++17 -O0 -Wall -Wextra -g3
+CXXFLAGS += $(SYMENGINE_VERSION_CHECK)
 SYMENGINE_INCLUDE ?= /usr/local/include
 SYMENGINE_LIB ?= /usr/local/lib
 INCLUDES = -Iinclude -I$(SYMENGINE_INCLUDE)
+SYMENGINE_VERSION_CHECK = -include include/symengine_version_check.h
 LDFLAGS = -L$(SYMENGINE_LIB) -lsymengine -lgmp -lmpfr
 
 TARGET = scctools

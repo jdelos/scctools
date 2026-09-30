@@ -8,7 +8,6 @@ function validateRequest(data) {
 }
 function submitToWasm(data, wasm) {
   try {
-    validateRequest(data);
     const encoded = new TextEncoder().encode(JSON.stringify(data) + '\0');
     const api = wasm.exports || wasm;
     const memory = api.memory || { buffer: api.HEAPU8.buffer };
