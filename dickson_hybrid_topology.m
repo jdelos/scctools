@@ -72,6 +72,7 @@ end
 
 
 %Generate output structures
+topology.schema = 'scctools.native.graph-qfa.v1';
 topology.ratio = top.m_ratios(OutNodes);
 %topology.ar = Dickson.ar(:,OutNodes);
 %topology.ac = Dickson.ac(:,OutNodes);
