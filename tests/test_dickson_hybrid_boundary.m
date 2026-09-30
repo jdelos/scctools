@@ -6,8 +6,8 @@ if exist('OCTAVE_VERSION','builtin'), pkg load symbolic; end
 % One-argument and two-argument calls retain documented default duty.
 t_default = dickson_hybrid_topology(2);
 t_two_arg = dickson_hybrid_topology(2, []);
-assert(isequal(t_default.duty, sym(1)/2));
-assert(isequal(t_two_arg.duty, sym(1)/2));
+assert(isequal(t_default.duty, 0.5));
+assert(isequal(t_two_arg.duty, 0.5));
 
 % Supported options remain usable.
 t_no_dc = dickson_hybrid_topology(2, sym(1)/2, struct('dc_out', false, 'half_point', false));
