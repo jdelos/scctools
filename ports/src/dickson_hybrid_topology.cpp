@@ -3,6 +3,7 @@
 #include "utilities.h"
 #include <symengine/integer.h>
 #include <symengine/symbol.h>
+#include <symengine/visitor.h>
 #include <stdexcept>
 using SymEngine::DenseMatrix;
 
@@ -10,9 +11,13 @@ Topology dickson_hybrid_topology(int n_caps, const SymEngine::Expression &duty,
                                  const std::vector<SymEngine::RCP<const SymEngine::Symbol>> &symbols,
                                  bool dc_out, bool half_point) {
     if (dc_out == false || half_point) throw std::invalid_argument("dickson_hybrid_topology: unsupported option");
-    if (symbols.empty()) throw std::invalid_argument("dickson_hybrid_topology: symbols must not be empty");
+    auto free = SymEngine::free_symbols(*duty.get_basic());
+    if (free.size() != symbols.size()) throw std::invalid_argument("dickson_hybrid_topology: symbols do not match duty");
+    for (const auto &symbol : symbols)
+        if (free.find(symbol) == free.end()) throw std::invalid_argument("dickson_hybrid_topology: symbols do not match duty");
     ArchDef arch = dickson_arch(n_caps);
     Topology top;
+    top.ordered_symbols = symbols;
     top.N_caps = n_caps; top.N_sw = arch.Asw.ncols(); top.vo_swing = 1.0 / n_caps;
     top.duty = SymEngine::DenseMatrix(1, 2);
     top.duty.set(0, 0, duty.get_basic());
@@ -28,7 +33,11 @@ Topology dickson_hybrid_topology(int n_caps, const SymEngine::Expression &duty,
             if (active) { DenseMatrix x(on.nrows(),on.ncols()+1); for(unsigned r=0;r<x.nrows();++r){for(unsigned j=0;j<on.ncols();++j)x.set(r,j,on.get(r,j));x.set(r,on.ncols(),one.get(r,0));} on=x; indexes.push_back(c+1); }
             else { DenseMatrix x(off.nrows(),off.ncols()+1); for(unsigned r=0;r<x.nrows();++r){for(unsigned j=0;j<off.ncols();++j)x.set(r,j,off.get(r,j));x.set(r,off.ncols(),one.get(r,0));} off=x; }
         }
-        top.phase.emplace_back(on,arch.Acaps,off,loads,n_caps,indexes,supply);
+        DenseMatrix phase_loads = loads;
+        auto phase_duty = p == 0 ? duty.get_basic() : SymEngine::sub(SymEngine::integer(1), duty.get_basic());
+        for (unsigned c = 0; c < phase_loads.ncols(); ++c)
+            phase_loads.set(c + 1, c, phase_duty);
+        top.phase.emplace_back(on,arch.Acaps,off,phase_loads,n_caps,indexes,supply);
         top.phase.back().duty = p == 0 ? duty : SymEngine::Expression(SymEngine::sub(SymEngine::integer(1), duty.get_basic()));
         top.phase.back().symbols = symbols;
         top.phase.back().graph = top.phase.back().get_on_no_sw();
@@ -42,5 +51,5 @@ Topology dickson_hybrid_topology(int n_caps, const SymEngine::Expression &duty,
 
 Topology dickson_hybrid_topology(int n_caps, double duty, bool dc_out, bool half_point) {
     return dickson_hybrid_topology(n_caps, SymEngine::Expression(duty),
-                                   {SymEngine::symbol("D")}, dc_out, half_point);
+                                   {}, dc_out, half_point);
 }

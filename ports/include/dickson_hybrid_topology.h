@@ -6,7 +6,6 @@
 #include <symengine/expression.h>
 #include <vector>
 #include "scc_phase.h"
-#include "scc_phase.h"
 
 struct Topology {
     SymEngine::DenseMatrix ratio, vc, vr, is;
@@ -14,6 +13,7 @@ struct Topology {
     int N_caps, N_sw;
     SymEngine::DenseMatrix duty;
     std::vector<SCCPhase> phase;
+    std::vector<SymEngine::RCP<const SymEngine::Symbol>> ordered_symbols;
 };
 
 Topology dickson_hybrid_topology(int n_caps, const SymEngine::Expression &duty,
