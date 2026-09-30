@@ -15,15 +15,23 @@ function [ topology ] = hybrid_topology(Arch,duty,opt)
 %   May be freely used and modified but never sold.  The original author
 %   must be cited in all derivative work.
 
-if isfield('dc_out',opt)
+if nargin < 1 || ~isstruct(Arch)
+    error('hybrid_topology:InvalidArchitecture', ...
+        'Arch must be architecture structure from dickson_arch or legacy generator.');
+end
+if nargin < 2 || isempty(duty)
+    duty = 0.5;
+end
+if nargin < 3 || isempty(opt)
+    opt = struct();
+end
+if ~isstruct(opt) || ~isscalar(opt)
+    error('hybrid_topology:InvalidOptions', 'opt must be scalar options structure.');
+end
+if isfield(opt,'dc_out')
     dc_out = opt.dc_out;
 else
-    dc_out = 1;
-end
-
-
-if (nargin == 1) || isempty(duty) 
-    duty = 0.5;
+    dc_out = true;
 end
 
 %% Create class 
@@ -34,18 +42,20 @@ top =  generic_switched_capacitor_class(Arch,'Duty',duty);
 OutNodes = 1:top.n_outs;
 
 if ~dc_out
-    if n_caps > 2
+    if top.n_caps > 2
         OutNodes([top.dc_out_cap end])=[];
     else
-        OutNodes([top.dc_out_cap])=[];
+        OutNodes(top.dc_out_cap)=[];
     end
 end
 
 
 %Generate output structures
+topology.schema = 'scctools.matlab.generic-qfa.v1';
 topology.ratio = top.m_ratios(OutNodes);
 topology.vc = top.v_caps_norm.'; %Capacitor voltages voltages
 topology.vr = top.v_sw_norm; %Switches voltages
+topology.is = top.i_sw_norm; %Switch currents
 topology.Y_ssl = top.k_ssl;
 topology.Y_fsl = top.k_fsl;
 
@@ -58,16 +68,17 @@ topology.f_fsl = ... %Retrun the symbolic fsl impedance function of the switches
 topology.f_esr = ... %Retrun the symbolic fsl impedance function of the esr capacitors 
     subs(top.r_fsl(OutNodes),top.ron_switches,zeros(1,top.n_switches));
 
-topology.var_ssl = symvar(topology.f_ssl);
+% Canonical source order preserves MATLAB positional substitution semantics.
+topology.var_ssl = top.caps;
 
 topology.eval_ssl = @(x)... %Returns a function that evaluates the Output Impedance as function
      subs(topology.f_ssl,topology.var_ssl,x); %of flying capacitances 
 
-topology.var_fsl = symvar(topology.f_fsl);
+topology.var_fsl = top.ron_switches;
 topology.eval_fsl = @(x)... %Returns a function that evaluates the Output Impedance as function
      subs(topology.f_fsl,topology.var_fsl,x); %of flying capacitances 
     
-topology.var_fesr = symvar(topology.f_esr);
+topology.var_fesr = top.esr_caps;
 topology.eval_fesr = @(x)... %Returns a function that evaluates the Output Impedance as function
      subs(topology.f_esr,topology.var_fesr,x); %of flying capacitances 
      
@@ -77,11 +88,11 @@ topology.g = top.k_factors;
 
 topology.dc_outputs = top.dc_out_cap;
 topology.r = cat(3,top.phase{1}.r_vector,top.phase{2}.r_vector); 
-topology.r_vars = symvar(topology.r);
+topology.r_vars = top.caps;
 topology.eval_r =@(x) subs(topology.r,topology.r_vars,x);
 topology.q_dc = [top.phase{1}.r_vector(end,top.dc_out_cap) top.phase{2}.r_vector(end,top.dc_out_cap)];
 topology.eval_q_dc = @(x)... %Returns a function that evaluates the Output Impedance as function
-     subs(topology.q_dc,symvar(topology.q_dc),x); %of flying capacitances 
+     subs(topology.q_dc,topology.r_vars,x); %of flying capacitances
 
 topology.N_outs = length(topology.ratio);
 topology.N_sw     = top.n_switches;

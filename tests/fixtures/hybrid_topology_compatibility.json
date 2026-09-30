@@ -1,0 +1,6 @@
+{
+  "legacy_schema": "scctools.matlab.generic-qfa.v1",
+  "graph_qfa_schema": "scctools.native.graph-qfa.v1",
+  "dc_out_false_n_outs_n2": 2,
+  "dc_out_false_n_outs_n3": 3
+}
