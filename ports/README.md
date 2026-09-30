@@ -48,7 +48,8 @@ make -C ports \
   native-phase-test \
   native-charge-test \
   native-graph-primitives-test \
-  native-matrix-test
+  native-matrix-test \
+  native-boundary-test
 ```
 
 Tests use exact symbolic comparisons for canonical two-phase Dickson cases.
