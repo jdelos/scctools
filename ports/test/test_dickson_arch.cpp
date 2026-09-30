@@ -26,7 +26,9 @@ int main() {
     const int sw2[] = {1,0,0,0,-1,1,0,0,0,-1,1,0,0,0,-1,1};
     check(2, caps2, 4, 2, sw2, 4, 4);
     const int caps3[] = {0,0,0,1,0,0,0,1,0,0,0,1,0,-1,0,-1,0,0};
-    const int sw3[] = {1,0,0,0,0,0,0,-1,1,0,0,0,0,0,0,-1,1,0,0,0,0,0,-1,1,0,0,1,0,0,0,-1,1,0,0,0,0,0,0,0,1,-1};
+    const int sw3[] = {1,0,0,0,0,0,0,-1,1,0,0,0,0,0,0,-1,1,0,0,0,0,0,0,-1,1,0,0,1,0,0,0,-1,1,0,0,0,0,0,0,0,1,-1};
     check(3, caps3, 6, 3, sw3, 6, 7);
-    try { dickson_arch(4); assert(false); } catch (const std::invalid_argument &) {}
+    const ArchDef a4 = dickson_arch(4);
+    assert(a4.Acaps.nrows() == 7 && a4.Acaps.ncols() == 4);
+    assert(a4.Asw.nrows() == 7 && a4.Asw.ncols() == 8);
 }

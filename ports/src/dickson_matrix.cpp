@@ -17,7 +17,7 @@ void dickson_matrix(int n_stages, bool in_cap,
 
     int j = 0;
     for (int i = 0; i < n_stages; ++i) {
-        if ((n_stages - i) < 3) {
+        if (n_stages - (i + 1) < 3) {
             A_caps[i][i] = 1;
             if (i < n_stages - 1) {
                 A_caps[n_stages + 1 - j][i] = -1;
