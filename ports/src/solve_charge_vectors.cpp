@@ -23,6 +23,9 @@ ChargeSolution solve_charge_vectors(const std::vector<DenseMatrix> &cutsets,
     if (cutsets.size() != 2) throw std::invalid_argument("solve_charge_vectors: exactly two phases required");
     if (!n_caps || duty.nrows() != 1 || duty.ncols() != 2)
         throw std::invalid_argument("solve_charge_vectors: invalid capacitor count or duty shape");
+    for (unsigned c = 0; c < duty.ncols(); ++c)
+        if (!duty.get(0, c).get())
+            throw std::invalid_argument("solve_charge_vectors: null duty entry");
     const auto duty_symbols = SymEngine::free_symbols(*duty.get(0, 0));
     if (symbols.size() != duty_symbols.size())
         throw std::invalid_argument("solve_charge_vectors: symbols do not match duty");
@@ -53,7 +56,9 @@ ChargeSolution solve_charge_vectors(const std::vector<DenseMatrix> &cutsets,
     DenseMatrix qx = zero_matrix(system_size, system_size);
     DenseMatrix qo = zero_matrix(system_size, outputs);
     unsigned row = 0;
+    std::vector<unsigned> phase_starts;
     for (unsigned p = 0; p < 2; ++p) {
+        phase_starts.push_back(row);
         const DenseMatrix &q = cutsets[p];
         for (unsigned r = 0; r < q.nrows(); ++r, ++row) {
             qx.set(row, p * (n_caps + 1), SymEngine::neg(q.get(r, 0)));
@@ -73,6 +78,8 @@ ChargeSolution solve_charge_vectors(const std::vector<DenseMatrix> &cutsets,
         for (unsigned c = 0; c < outputs; ++c)
             rhs.set(r, c, SymEngine::neg(qo.get(r, c)));
     try {
+        if (SymEngine::eq(*SymEngine::det_berkowitz(qx), *SymEngine::integer(0)))
+            throw std::runtime_error("singular");
         SymEngine::fraction_free_LU_solve(qx, rhs, ax);
     } catch (...) {
         throw std::runtime_error("solve_charge_vectors: singular charge system");
@@ -82,7 +89,7 @@ ChargeSolution solve_charge_vectors(const std::vector<DenseMatrix> &cutsets,
     for (unsigned p = 0; p < 2; ++p) {
         DenseMatrix phase = zero_matrix(n_caps + 1, outputs);
         for (unsigned r = 0; r <= n_caps; ++r)
-            for (unsigned c = 0; c < outputs; ++c) phase.set(r, c, ax.get(p * (n_caps + 1) + r, c));
+            for (unsigned c = 0; c < outputs; ++c) phase.set(r, c, ax.get(phase_starts[p] + r, c));
         result.a.push_back(phase);
         for (unsigned c = 0; c < outputs; ++c)
             result.m.set(c, 0, SymEngine::add(result.m.get(c, 0), phase.get(0, c)));

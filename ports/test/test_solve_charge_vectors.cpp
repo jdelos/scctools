@@ -70,4 +70,20 @@ int main() {
     rejected = false;
     try { (void)solve_charge_vectors({fixture_q1(), fixture_q2()}, 1, duty(d), {}); } catch (const std::invalid_argument &) { rejected = true; }
     assert(rejected);
+
+    DenseMatrix null_duty(1, 2); null_duty.set(0, 0, d);
+    rejected = false;
+    try { (void)solve_charge_vectors({fixture_q1(), fixture_q2()}, 1, null_duty, {d}); } catch (const std::invalid_argument &) { rejected = true; }
+    assert(rejected);
+
+    const char *unequal_q1_values[] = {"-1", "1", "1", "0", "1", "1"};
+    const char *unequal_q2_values[] = {"-1", "0", "1"};
+    auto unequal = solve_charge_vectors({matrix(2, 3, unequal_q1_values), matrix(1, 3, unequal_q2_values)}, 1, duty(d), {d});
+    expect_matrix(unequal.Qx, 4, 4, (const char *[]) {"1", "1", "0", "0", "0", "1", "0", "0", "0", "0", "1", "0", "0", "1", "0", "1"});
+    expect_matrix(unequal.Qo, 4, 1, (const char *[]) {"1", "1", "1", "0"});
+
+    rejected = false;
+    auto zero_q = matrix(2, 3, (const char *[]) {"0", "0", "0", "0", "0", "0"});
+    try { (void)solve_charge_vectors({fixture_q1(), zero_q}, 1, duty(d), {d}); } catch (const std::runtime_error &) { rejected = true; }
+    assert(rejected);
 }
