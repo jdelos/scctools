@@ -15,7 +15,7 @@ SRC_FILES = $(wildcard $(SRC_DIR)/*.cpp) main.cpp
 OBJ_FILES = $(patsubst %.cpp, $(OBJ_DIR)/%.o, $(notdir $(SRC_FILES)))
 TEST_SRC_DICKSON_MATRIX ?= test/test_dickson_matrix.cpp
 
-.PHONY: all native-test native-phase-test native-charge-test native-graph-primitives-test native-matrix-test native-boundary-test wasm-test wasm-build test_dickson_matrix clean FORCE
+.PHONY: all native-test native-phase-test native-charge-test native-graph-primitives-test native-matrix-test native-boundary-test wasm-test wasm-build qfa-json matlab-parity-test test_dickson_matrix clean FORCE
 
 all: $(TARGET)
 
@@ -30,7 +30,7 @@ native-test:
 	/tmp/test_dickson_arch
 
 native-phase-test:
-	$(CXX) $(CXXFLAGS) $(INCLUDES) test/test_phase.cpp src/dickson_hybrid_topology.cpp src/dickson_arch.cpp src/dickson_matrix.cpp src/phase_conv.cpp src/scc_phase.cpp src/graph_primitives.cpp src/utilities.cpp src/solve_charge_vectors.cpp -L$(SYMENGINE_LIB) -lsymengine -lgmp -o /tmp/test_phase
+	$(CXX) $(CXXFLAGS) $(INCLUDES) test/test_phase.cpp src/qfa_bundle.cpp src/dickson_hybrid_topology.cpp src/dickson_arch.cpp src/dickson_matrix.cpp src/phase_conv.cpp src/scc_phase.cpp src/graph_primitives.cpp src/utilities.cpp src/solve_charge_vectors.cpp -L$(SYMENGINE_LIB) -lsymengine -lgmp -o /tmp/test_phase
 	/tmp/test_phase
 
 native-charge-test:
@@ -46,8 +46,14 @@ native-matrix-test:
 	/tmp/test_dickson_matrix
 
 native-boundary-test:
-	$(CXX) $(CXXFLAGS) $(INCLUDES) test/test_native_boundary.cpp src/native_boundary.cpp src/dickson_hybrid_topology.cpp src/dickson_arch.cpp src/dickson_matrix.cpp src/phase_conv.cpp src/scc_phase.cpp src/graph_primitives.cpp src/utilities.cpp src/solve_charge_vectors.cpp -L$(SYMENGINE_LIB) -lsymengine -lgmp -o /tmp/test_native_boundary
+	$(CXX) $(CXXFLAGS) $(INCLUDES) test/test_native_boundary.cpp src/qfa_bundle.cpp src/native_boundary.cpp src/dickson_hybrid_topology.cpp src/dickson_arch.cpp src/dickson_matrix.cpp src/phase_conv.cpp src/scc_phase.cpp src/graph_primitives.cpp src/utilities.cpp src/solve_charge_vectors.cpp -L$(SYMENGINE_LIB) -lsymengine -lgmp -o /tmp/test_native_boundary
 	/tmp/test_native_boundary
+
+qfa-json:
+	$(CXX) $(CXXFLAGS) $(INCLUDES) test/qfa_json.cpp $(wildcard src/*.cpp) $(LDFLAGS) -o /tmp/scctools-qfa-json
+
+matlab-parity-test: qfa-json
+	/opt/Polyspace/R2021a/bin/matlab -batch "cd('..'); addpath(pwd); addpath('tests'); test_qfa_bundle; disp('QFA_PARITY_PASS')"
 
 test_dickson_matrix: native-matrix-test
 

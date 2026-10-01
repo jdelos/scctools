@@ -9,6 +9,9 @@
 
 struct Topology {
     SymEngine::DenseMatrix ratio, vc, vr, is, m_ratios;
+    SymEngine::DenseMatrix ZSSL, ZFSL, ZESR, ZSCC;
+    std::vector<SymEngine::RCP<const SymEngine::Symbol>> capacitances, switch_resistances, capacitor_esr;
+    SymEngine::RCP<const SymEngine::Symbol> frequency;
     double vo_swing;
     int N_caps, N_sw;
     SymEngine::DenseMatrix duty;
