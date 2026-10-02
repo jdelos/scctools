@@ -97,11 +97,54 @@ Run the static request and fixture checks:
 node ports/workbench/test-fixtures.js
 ```
 
+## Complete symbolic QFA bundle
+
+Version 1 topology requests generate an exact symbolic model with independent duty
+`D` and complementary duty `1-D`. Existing request `duty` selects a workbench
+preset; it does not silently evaluate the model. Explicit `substitutions` adds an
+`evaluated` bundle; the symbolic bundle remains unchanged.
+
+```json
+{"version":1,"architecture":"qfa-graph","stages":2,"phases":2,"capacitors":2,"duty":0.5,"substitutions":{"duty":[0.5,0.5],"capacitances":[1,2],"switch_resistances":[0.1,0.2,0.3,0.4],"capacitor_esr":[0.01,0.02],"frequency":[100000]}}
+```
+
+Ordered vectors follow `symbols` and one-based `ordering` metadata. Both phase
+duties are required, strictly positive, summing to one. Capacitances (F) and
+frequency (Hz) must be positive; switch resistance and capacitor ESR (ohms) may
+be zero. All values must be finite. Invalid vectors return `INVALID_SUBSTITUTION`.
+`matlab_compatible` gives alphabetical MATLAB `symvar` order, not engine-discovered
+order. Matrices are row-major arrays of expression strings; evaluated entries
+are numerical strings. Compare values/algebra, never expression spelling.
+
+`A` includes supply then capacitor rows; `B` is pumped capacitor charge;
+`G` and `r` are aliases for redistributed charge `A_caps-B`. `Ar` has capacitor
+rows followed by active-switch rows. Columns follow output-node order.
+Capacitor voltage stress is normalized to input voltage; switch voltage is
+signed per phase. Switch current stress is signed charge per output, matching
+MATLAB `switch_current_ratio_N`, not peak transient current.
+
+`ZSSL` includes `1/fsw`; `ZFSL` includes switch resistance **and capacitor ESR**.
+`ZESR` exposes the capacitor-only contribution. `ZSCC = sqrt(ZSSL.^2 + ZFSL.^2)`
+is an elementwise analytical root-sum-square approximation, **not transient
+impedance**. Loss matrices use output order on both axes.
+
+Live MATLAB/native algebraic parity (two- and three-capacitor models):
+
+```bash
+make -C ports matlab-parity-test
+```
+
 ## Frequently asked questions
 
 ### Do the parity tests run the `ports/scctools` executable?
 
-No. The current parity tests do not run the `ports/scctools` executable.
+The original parity tests do not run `ports/scctools`. The complete-bundle test
+builds `/tmp/scctools-qfa-json`, invokes the real native JSON boundary from MATLAB,
+and compares charge/stress fields by exact algebraic differences. Two-capacitor
+losses use exact identities. R2021a crashes expanding three-capacitor loss
+identities, so those use four unequal-component exact substitutions and
+50-digit RSS comparisons (tolerance `1e-40`), as permitted by the parity policy.
+Explicit numerical substitutions are also checked against MATLAB.
 
 The native test targets compile separate test programs. These programs link directly to the production C++ source files. They call functions such as `dickson_hybrid_topology` and `solve_charge_vectors`.
 
@@ -124,6 +167,5 @@ The `ports/scctools` executable is currently a smoke-test program. It uses one f
 Topology calculated for 5 capacitors.
 ```
 
-Thus, the current tests verify parity at the C++ function boundary. They do not verify parity through the final executable interface.
-
-A future integration must add a machine-readable command-line interface. An end-to-end test can then run `ports/scctools`, read its output, and compare that output with the MATLAB reference data. The browser can use the same interface after the native model is connected.
+Complete-bundle parity additionally exercises the public JSON boundary through
+`/tmp/scctools-qfa-json`. Browser integration calls that same boundary in WASM.

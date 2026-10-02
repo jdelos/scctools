@@ -108,9 +108,9 @@ int main() {
 
     Topology n = dickson_hybrid_topology(3,.25,true,false);
     assert(n.ordered_symbols.empty());
-    assert(SymEngine::eq(*n.duty.get(0, 0), *SymEngine::real_double(.25)));
-    assert(SymEngine::eq(*n.duty.get(0, 1), *SymEngine::real_double(.75)));
-    auto quarter = SymEngine::real_double(.25);
+    assert(SymEngine::eq(*n.duty.get(0, 0), *SymEngine::parse("1/4")));
+    assert(SymEngine::eq(*n.duty.get(0, 1), *SymEngine::parse("3/4")));
+    auto quarter = SymEngine::parse("1/4");
     for(unsigned p=0;p<2;++p) {
         const auto &s = t3.phase[p]; const auto &q = n.phase[p];
         same(q.inc_on_sw, substituted(s.inc_on_sw, d, quarter));
@@ -121,7 +121,8 @@ int main() {
         assert(q.tree == s.tree && q.sw_idxs == s.sw_idxs);
         assert(q.symbols.empty());
     }
-    expect_loads(n.phase[0], "0.25"); expect_loads(n.phase[1], "0.75");
+    expect_loads(n.phase[0], "1/4"); expect_loads(n.phase[1], "3/4");
+    rejected(2,Expression(0),{},true,false); rejected(2,Expression(1),{},true,false);
     rejected(2,D,{d,SymEngine::symbol("E")},true,false);
     rejected(1,D,{d},true,false); rejected(2,D,{},true,false); rejected(2,D,{d},false,false); rejected(2,D,{d},true,true);
     return 0;

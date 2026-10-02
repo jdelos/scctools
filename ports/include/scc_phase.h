@@ -15,7 +15,7 @@ struct SCCPhase {
     SymEngine::DenseMatrix cutset;
     SymEngine::Expression duty;
     std::vector<SymEngine::RCP<const SymEngine::Symbol>> symbols;
-    SymEngine::DenseMatrix a_vector;
+    SymEngine::DenseMatrix a_vector, b_vector, r_vector, ar_vector;
 
     SCCPhase(const SymEngine::DenseMatrix &on, const SymEngine::DenseMatrix &caps,
              const SymEngine::DenseMatrix &off, const SymEngine::DenseMatrix &loads,

@@ -1,11 +1,14 @@
 #include "dickson_hybrid_topology.h"
 #include "graph_primitives.h"
-#include "utilities.h"
 #include "solve_charge_vectors.h"
+#include "qfa_bundle.h"
 #include <symengine/integer.h>
 #include <symengine/symbol.h>
 #include <symengine/visitor.h>
 #include <stdexcept>
+#include <cmath>
+#include <symengine/pow.h>
+#include <symengine/eval_double.h>
 using SymEngine::DenseMatrix;
 
 Topology dickson_hybrid_topology(int n_caps, const SymEngine::Expression &duty,
@@ -13,6 +16,11 @@ Topology dickson_hybrid_topology(int n_caps, const SymEngine::Expression &duty,
                                  bool dc_out, bool half_point) {
     if (dc_out == false || half_point) throw std::invalid_argument("dickson_hybrid_topology: unsupported option");
     auto free = SymEngine::free_symbols(*duty.get_basic());
+    if (free.empty()) {
+        double value=SymEngine::eval_double(*duty.get_basic());
+        if (!std::isfinite(value) || value<=0 || value>=1)
+            throw std::invalid_argument("dickson_hybrid_topology: duty must be in (0,1)");
+    }
     if (free.size() != symbols.size()) throw std::invalid_argument("dickson_hybrid_topology: symbols do not match duty");
     for (const auto &symbol : symbols)
         if (free.find(symbol) == free.end()) throw std::invalid_argument("dickson_hybrid_topology: symbols do not match duty");
@@ -53,10 +61,16 @@ Topology dickson_hybrid_topology(int n_caps, const SymEngine::Expression &duty,
     top.m_ratios = charge.m;
     top.ratio = charge.m;
     for (unsigned p = 0; p < top.phase.size(); ++p) top.phase[p].set_a_vector(charge.a[p]);
+    complete_qfa(top, arch);
     return top;
 }
 
 Topology dickson_hybrid_topology(int n_caps, double duty, bool dc_out, bool half_point) {
-    return dickson_hybrid_topology(n_caps, SymEngine::Expression(duty),
-                                   {}, dc_out, half_point);
+    if (!std::isfinite(duty) || duty<=0 || duty>=1)
+        throw std::invalid_argument("dickson_hybrid_topology: duty must be in (0,1)");
+    int exponent;
+    double mantissa=std::frexp(duty,&exponent);
+    auto exact=SymEngine::mul(SymEngine::integer(static_cast<long long>(std::ldexp(mantissa,53))),
+                             SymEngine::pow(SymEngine::integer(2),SymEngine::integer(exponent-53)));
+    return dickson_hybrid_topology(n_caps, SymEngine::Expression(exact), {}, dc_out, half_point);
 }
